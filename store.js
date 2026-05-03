@@ -1,65 +1,62 @@
 const Store = {
-  getCart() {
-    return JSON.parse(localStorage.getItem('marta_cart') || '[]');
+  async getCart() {
+    const r = await fetch('/api/cart');
+    return r.json();
   },
 
-  saveCart(cart) {
-    localStorage.setItem('marta_cart', JSON.stringify(cart));
-    this.updateBadge();
+  async addToCart(item) {
+    await fetch('/api/cart', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(item),
+    });
+    await this.updateBadge();
   },
 
-  addToCart(item) {
-    const cart = this.getCart();
-    const hit = cart.find(i => i.id === item.id && i.color === item.color && i.size === item.size);
-    if (hit) { hit.quantity++; } else { cart.push({ ...item, quantity: 1 }); }
-    this.saveCart(cart);
+  async updateQuantity(itemId, delta) {
+    await fetch(`/api/cart/${itemId}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ delta }),
+    });
+    await this.updateBadge();
   },
 
-  removeFromCart(id, color, size) {
-    this.saveCart(this.getCart().filter(i => !(i.id === id && i.color === color && i.size === size)));
+  async removeFromCart(itemId) {
+    await fetch(`/api/cart/${itemId}`, { method: 'DELETE' });
+    await this.updateBadge();
   },
 
-  updateQuantity(id, color, size, delta) {
-    const cart = this.getCart();
-    const item = cart.find(i => i.id === id && i.color === color && i.size === size);
-    if (!item) return;
-    item.quantity = Math.max(1, item.quantity + delta);
-    this.saveCart(cart);
+  async getWishlist() {
+    const r = await fetch('/api/wishlist');
+    return r.json();
   },
 
-  getCartCount() {
-    return this.getCart().reduce((n, i) => n + i.quantity, 0);
+  async addToWishlist(item) {
+    const r = await fetch('/api/wishlist', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(item),
+    });
+    const data = await r.json();
+    return data.added;
   },
 
-  getWishlist() {
-    return JSON.parse(localStorage.getItem('marta_wishlist') || '[]');
+  async removeFromWishlist(itemId) {
+    await fetch(`/api/wishlist/${itemId}`, { method: 'DELETE' });
   },
 
-  saveWishlist(wishlist) {
-    localStorage.setItem('marta_wishlist', JSON.stringify(wishlist));
+  async findInWishlist(productId, color, size) {
+    const list = await this.getWishlist();
+    return list.find(i => i.productId === productId && i.color === color && i.size === size) || null;
   },
 
-  addToWishlist(item) {
-    const list = this.getWishlist();
-    if (list.find(i => i.id === item.id && i.color === item.color && i.size === item.size)) return false;
-    list.push(item);
-    this.saveWishlist(list);
-    return true;
-  },
-
-  removeFromWishlist(id, color, size) {
-    this.saveWishlist(this.getWishlist().filter(i => !(i.id === id && i.color === color && i.size === size)));
-  },
-
-  isInWishlist(id, color, size) {
-    return this.getWishlist().some(i => i.id === id && i.color === color && i.size === size);
-  },
-
-  updateBadge() {
-    const count = this.getCartCount();
+  async updateBadge() {
+    const cart  = await this.getCart();
+    const count = cart.reduce((n, i) => n + i.quantity, 0);
     document.querySelectorAll('.cart-badge').forEach(el => {
-      el.textContent = count;
+      el.textContent  = count;
       el.style.display = count === 0 ? 'none' : 'flex';
     });
-  }
+  },
 };

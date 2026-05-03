@@ -333,42 +333,43 @@
       image: 'https://placehold.co/400x500/e8e8e8/aaaaaa?text=.',
     };
 
-    function syncWishlistBtn() {
-      const inList = Store.isInWishlist(PRODUCT.id, selectedColor, selectedSize);
-      wishlistBtn.classList.toggle('in-wishlist', inList);
+    async function syncWishlistBtn() {
+      const item = await Store.findInWishlist(PRODUCT.id, selectedColor, selectedSize);
+      wishlistBtn.classList.toggle('in-wishlist', !!item);
     }
 
     document.querySelectorAll('.color-swatch').forEach(swatch => {
-      swatch.addEventListener('click', () => {
+      swatch.addEventListener('click', async () => {
         document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
         swatch.classList.add('selected');
         selectedColor = swatch.getAttribute('aria-label');
         document.querySelector('.panel-label-value').textContent = selectedColor;
-        syncWishlistBtn();
+        await syncWishlistBtn();
       });
     });
 
     document.querySelectorAll('.size-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         selectedSize = btn.textContent.trim();
-        syncWishlistBtn();
+        await syncWishlistBtn();
       });
     });
 
-    document.querySelector('.btn-cart').addEventListener('click', () => {
-      Store.addToCart({ ...PRODUCT, color: selectedColor, size: selectedSize });
+    document.querySelector('.btn-cart').addEventListener('click', async () => {
+      await Store.addToCart({ ...PRODUCT, color: selectedColor, size: selectedSize });
       showToast('Added to cart');
     });
 
-    wishlistBtn.addEventListener('click', () => {
-      if (Store.isInWishlist(PRODUCT.id, selectedColor, selectedSize)) {
-        Store.removeFromWishlist(PRODUCT.id, selectedColor, selectedSize);
+    wishlistBtn.addEventListener('click', async () => {
+      const existing = await Store.findInWishlist(PRODUCT.id, selectedColor, selectedSize);
+      if (existing) {
+        await Store.removeFromWishlist(existing.id);
         wishlistBtn.classList.remove('in-wishlist');
         showToast('Removed from wishlist');
       } else {
-        Store.addToWishlist({ ...PRODUCT, color: selectedColor, size: selectedSize });
+        await Store.addToWishlist({ ...PRODUCT, color: selectedColor, size: selectedSize });
         wishlistBtn.classList.add('in-wishlist');
         showToast('Added to wishlist');
       }

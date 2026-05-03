@@ -58,8 +58,8 @@
     const wishlistGridEl = document.getElementById('wishlistGrid');
     const emptyStateEl   = document.getElementById('emptyState');
 
-    function renderWishlist() {
-      const list = Store.getWishlist();
+    async function renderWishlist() {
+      const list = await Store.getWishlist();
 
       if (list.length === 0) {
         emptyStateEl.hidden = false;
@@ -69,7 +69,7 @@
 
       emptyStateEl.hidden = true;
       wishlistGridEl.innerHTML = list.map(item => `
-        <article class="wishlist-card" data-id="${item.id}" data-color="${item.color}" data-size="${item.size}">
+        <article class="wishlist-card" data-item-id="${item.id}">
           <a href="product.html" class="product-image-link">
             <img src="${item.image}" alt="${item.name}" />
           </a>
@@ -86,23 +86,23 @@
       `).join('');
     }
 
-    wishlistGridEl.addEventListener('click', e => {
+    wishlistGridEl.addEventListener('click', async e => {
       const card = e.target.closest('.wishlist-card');
       if (!card) return;
-      const { id, color, size } = card.dataset;
-      const item = Store.getWishlist().find(i => i.id === id && i.color === color && i.size === size);
+      const itemId = parseInt(card.dataset.itemId);
+      const list = await Store.getWishlist();
+      const item = list.find(i => i.id === itemId);
       if (!item) return;
 
       if (e.target.classList.contains('btn-wl-cart')) {
-        Store.addToCart(item);
-        Store.updateBadge();
+        await Store.addToCart({ id: item.productId, name: item.name, price: item.price, image: item.image, color: item.color, size: item.size });
         showToast('Added to cart');
         return;
       }
 
       if (e.target.classList.contains('btn-wl-remove')) {
-        Store.removeFromWishlist(id, color, size);
-        renderWishlist();
+        await Store.removeFromWishlist(itemId);
+        await renderWishlist();
       }
     });
 

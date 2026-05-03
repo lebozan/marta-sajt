@@ -78,8 +78,8 @@
 
     function fmt(n) { return '€' + n.toFixed(2); }
 
-    function renderCart() {
-      const cart = Store.getCart();
+    async function renderCart() {
+      const cart = await Store.getCart();
 
       if (cart.length === 0) {
         emptyStateEl.hidden = false;
@@ -91,7 +91,7 @@
       cartLayoutEl.hidden = false;
 
       cartItemsEl.innerHTML = cart.map(item => `
-        <div class="cart-item" data-id="${item.id}" data-color="${item.color}" data-size="${item.size}">
+        <div class="cart-item" data-item-id="${item.id}">
           <img class="cart-item-img" src="${item.image}" alt="${item.name}" />
           <div class="cart-item-info">
             <p class="cart-item-name">${item.name}</p>
@@ -118,21 +118,21 @@
       document.getElementById('summaryTotal').textContent = fmt(subtotal);
     }
 
-    cartItemsEl.addEventListener('click', e => {
+    cartItemsEl.addEventListener('click', async e => {
       const row = e.target.closest('.cart-item');
       if (!row) return;
-      const { id, color, size } = row.dataset;
+      const itemId = parseInt(row.dataset.itemId);
 
       const qtyBtn = e.target.closest('.qty-btn');
       if (qtyBtn) {
-        Store.updateQuantity(id, color, size, parseInt(qtyBtn.dataset.delta));
-        renderCart();
+        await Store.updateQuantity(itemId, parseInt(qtyBtn.dataset.delta));
+        await renderCart();
         return;
       }
 
       if (e.target.closest('.cart-remove')) {
-        Store.removeFromCart(id, color, size);
-        renderCart();
+        await Store.removeFromCart(itemId);
+        await renderCart();
       }
     });
 
