@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MARTA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="navbar">
+    <a href="#" class="brand">MARTA</a>
+    <nav class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">New In</a>
+      <a href="#">Shop</a>
+      <a href="#">About</a>
+      <a href="#">Sale</a>
+    </nav>
+    <div class="nav-icons">
+      <a href="#" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </a>
+      <a href="wishlist.html" aria-label="Wishlist">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </a>
+      <a href="cart.html" aria-label="Cart" class="nav-cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span class="cart-badge" style="display:none">0</span>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="product-grid">
+
+      <article class="product-card">
+        <a href="product.html" class="product-image-link">
+          <img src="https://placehold.co/400x500/e8e8e8/aaaaaa?text=." alt="Linen Blazer" />
+        </a>
+        <a href="product.html" class="product-info">
+          <span class="product-name">Linen Blazer</span>
+          <span class="product-price">€129.00</span>
+        </a>
+      </article>
+
+      <article class="product-card">
+        <a href="product.html" class="product-image-link">
+          <img src="https://placehold.co/400x500/e0dbd5/aaaaaa?text=." alt="Wool Coat" />
+        </a>
+        <a href="product.html" class="product-info">
+          <span class="product-name">Wool Coat</span>
+          <span class="product-price">€249.00</span>
+        </a>
+      </article>
+
+      <article class="product-card">
+        <a href="product.html" class="product-image-link">
+          <img src="https://placehold.co/400x500/dce3e8/aaaaaa?text=." alt="Silk Slip Dress" />
+        </a>
+        <a href="product.html" class="product-info">
+          <span class="product-name">Silk Slip Dress</span>
+          <span class="product-price">€89.00</span>
+        </a>
+      </article>
+
+      <article class="product-card">
+        <a href="product.html" class="product-image-link">
+          <img src="https://placehold.co/400x500/e8e4e0/aaaaaa?text=." alt="Cashmere Knit" />
+        </a>
+        <a href="product.html" class="product-info">
+          <span class="product-name">Cashmere Knit</span>
+          <span class="product-price">€159.00</span>
+        </a>
+      </article>
+
+      <article class="product-card">
+        <a href="product.html" class="product-image-link">
+          <img src="https://placehold.co/400x500/e5e8e0/aaaaaa?text=." alt="Wide Leg Trousers" />
+        </a>
+        <a href="product.html" class="product-info">
+          <span class="product-name">Wide Leg Trousers</span>
+          <span class="product-price">€99.00</span>
+        </a>
+      </article>
+
+      <article class="product-card">
+        <a href="product.html" class="product-image-link">
+          <img src="https://placehold.co/400x500/e8e0e8/aaaaaa?text=." alt="Oversized Shirt" />
+        </a>
+        <a href="product.html" class="product-info">
+          <span class="product-name">Oversized Shirt</span>
+          <span class="product-price">€69.00</span>
+        </a>
+      </article>
+
+    </section>
+  </main>
+
+  <script src="store.js"></script>
+  <script>Store.updateBadge();</script>
+
+</body>
+</html>

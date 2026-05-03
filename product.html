@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linen Blazer — MARTA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="navbar">
+    <a href="index.html" class="brand">MARTA</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="#">New In</a>
+      <a href="#">Shop</a>
+      <a href="#">About</a>
+      <a href="#">Sale</a>
+    </nav>
+    <div class="nav-icons">
+      <a href="#" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </a>
+      <a href="wishlist.html" aria-label="Wishlist">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </a>
+      <a href="cart.html" aria-label="Cart" class="nav-cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span class="cart-badge" style="display:none">0</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="product-detail">
+
+    <div class="product-images">
+      <img src="https://placehold.co/800x1000/e8e8e8/aaaaaa?text=." alt="Linen Blazer — view 1" />
+      <img src="https://placehold.co/800x1000/e0dbd5/aaaaaa?text=." alt="Linen Blazer — view 2" />
+      <img src="https://placehold.co/800x1000/dce3e8/aaaaaa?text=." alt="Linen Blazer — view 3" />
+      <img src="https://placehold.co/800x1000/e8e4e0/aaaaaa?text=." alt="Linen Blazer — view 4" />
+    </div>
+
+    <aside class="product-panel">
+      <h1 class="panel-name">Linen Blazer</h1>
+      <p class="panel-price">€129.00</p>
+
+      <div class="panel-section">
+        <p class="panel-label">Color — <span class="panel-label-value">Sand</span></p>
+        <div class="color-options">
+          <button class="color-swatch selected" style="background:#c9b99a;" aria-label="Sand"></button>
+          <button class="color-swatch" style="background:#2b2b2b;" aria-label="Charcoal"></button>
+          <button class="color-swatch" style="background:#e8e0d5;" aria-label="Cream"></button>
+          <button class="color-swatch" style="background:#7a8c7e;" aria-label="Sage"></button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <p class="panel-label">Size</p>
+        <div class="size-options">
+          <button class="size-btn">XS</button>
+          <button class="size-btn selected">S</button>
+          <button class="size-btn">M</button>
+          <button class="size-btn">L</button>
+          <button class="size-btn">XL</button>
+        </div>
+        <a href="#" class="find-size-link" id="findSizeBtn">Find your size</a>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn-cart">Add to Cart</button>
+        <button class="btn-wishlist">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          Add to Wishlist
+        </button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Size Guide Modal -->
+  <div class="modal-overlay" id="sizeModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+      <button class="modal-close" id="modalClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+
+      <h2 class="modal-title" id="modalTitle">Find Your Perfect Fit</h2>
+
+      <div class="modal-row">
+        <div class="gender-toggle">
+          <label class="gender-option">
+            <input type="radio" name="gender" value="female" checked />
+            <span>Female</span>
+          </label>
+          <label class="gender-option">
+            <input type="radio" name="gender" value="male" />
+            <span>Male</span>
+          </label>
+        </div>
+
+        <div class="unit-toggle" id="unitToggle">
+          <span class="unit-option active" data-unit="metric">cm / kg</span>
+          <span class="unit-option" data-unit="imperial">in / lb</span>
+          <span class="unit-thumb"></span>
+        </div>
+      </div>
+
+      <div class="measurements">
+
+        <div class="slider-row" data-field="age">
+          <span class="slider-label">Age</span>
+          <div class="slider-wrap">
+            <div class="slider-track"></div>
+          </div>
+          <span class="slider-display"><span class="slider-val">25</span><span class="slider-unit"> yrs</span></span>
+        </div>
+
+        <div class="slider-row" data-field="weight">
+          <span class="slider-label">Weight</span>
+          <div class="slider-wrap">
+            <div class="slider-track"></div>
+          </div>
+          <span class="slider-display"><span class="slider-val">70</span><span class="slider-unit"> kg</span></span>
+        </div>
+
+        <div class="slider-row" data-field="height">
+          <span class="slider-label">Height</span>
+          <div class="slider-wrap">
+            <div class="slider-track"></div>
+          </div>
+          <span class="slider-display"><span class="slider-val">170</span><span class="slider-unit"> cm</span></span>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const ITEM_W = 44;
+
+    const FIELDS = {
+      age:    { metric: { min: 18,  max: 100, unit: 'yrs', def: 25  }, imperial: null },
+      weight: { metric: { min: 30,  max: 180, unit: 'kg',  def: 70  }, imperial: { min: 66,  max: 397, unit: 'lb', def: 154 } },
+      height: { metric: { min: 130, max: 240, unit: 'cm',  def: 170 }, imperial: { min: 51,  max: 94,  unit: 'in', def: 67  } },
+    };
+
+    function toImperial(field, val) {
+      if (field === 'weight') return Math.round(val * 2.2046);
+      if (field === 'height') return Math.round(val / 2.54);
+      return val;
+    }
+
+    function toMetric(field, val) {
+      if (field === 'weight') return Math.round(val / 2.2046);
+      if (field === 'height') return Math.round(val * 2.54);
+      return val;
+    }
+
+    function inchesToFeetStr(inches) {
+      return `${Math.floor(inches / 12)}'${inches % 12}"`;
+    }
+
+    class NumSlider {
+      constructor(field) {
+        this.field  = field;
+        this.row    = document.querySelector(`.slider-row[data-field="${field}"]`);
+        this.track  = this.row.querySelector('.slider-track');
+        this.valEl  = this.row.querySelector('.slider-val');
+        this.unitEl = this.row.querySelector('.slider-unit');
+        this.unit   = 'metric';
+        this.metricVal = FIELDS[field].metric.def;
+        this._build('metric');
+        this._attachDrag();
+        this._attachScroll();
+      }
+
+      _build(unit) {
+        const cfg = FIELDS[this.field][unit] || FIELDS[this.field].metric;
+        this._cfg = cfg;
+        this.track.innerHTML = '';
+        for (let v = cfg.min; v <= cfg.max; v++) {
+          const el = document.createElement('div');
+          el.className = 'num-item';
+          el.textContent = v;
+          this.track.appendChild(el);
+        }
+        this._items = Array.from(this.track.children);
+      }
+
+      _scrollToVal(displayVal, instant) {
+        const idx = Math.max(0, Math.min(this._items.length - 1, displayVal - this._cfg.min));
+        const target = idx * ITEM_W;
+        if (instant) {
+          this.track.scrollLeft = target;
+          this._markActive(idx);
+        } else {
+          this.track.scrollTo({ left: target, behavior: 'smooth' });
+        }
+      }
+
+      _markActive(idx) {
+        idx = Math.max(0, Math.min(this._items.length - 1, idx));
+        this._items.forEach((el, i) => el.classList.toggle('active', i === idx));
+        const val = this._cfg.min + idx;
+        if (this.field === 'height' && this.unit === 'imperial') {
+          this.valEl.textContent = inchesToFeetStr(val);
+          this.unitEl.textContent = '';
+        } else {
+          this.valEl.textContent = val;
+          this.unitEl.textContent = ' ' + this._cfg.unit;
+        }
+        this.metricVal = this.unit === 'metric' ? val : toMetric(this.field, val);
+      }
+
+      _attachScroll() {
+        let timer;
+        this.track.addEventListener('scroll', () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            this._markActive(Math.round(this.track.scrollLeft / ITEM_W));
+          }, 60);
+        });
+      }
+
+      _attachDrag() {
+        let dragging = false, startX = 0, scrollStart = 0;
+        this.track.addEventListener('mousedown', e => {
+          dragging = true;
+          startX = e.clientX;
+          scrollStart = this.track.scrollLeft;
+          e.preventDefault();
+        });
+        window.addEventListener('mousemove', e => {
+          if (!dragging) return;
+          this.track.scrollLeft = scrollStart - (e.clientX - startX);
+        });
+        window.addEventListener('mouseup', () => {
+          if (!dragging) return;
+          dragging = false;
+          const idx = Math.round(this.track.scrollLeft / ITEM_W);
+          this.track.scrollTo({ left: idx * ITEM_W, behavior: 'smooth' });
+        });
+      }
+
+      init() {
+        requestAnimationFrame(() => {
+          const displayVal = this.unit === 'imperial'
+            ? toImperial(this.field, this.metricVal)
+            : this.metricVal;
+          this._scrollToVal(displayVal, true);
+        });
+      }
+
+      setUnit(unit) {
+        if (this.unit === unit) return;
+        this.unit = unit;
+        const displayVal = unit === 'imperial'
+          ? toImperial(this.field, this.metricVal)
+          : this.metricVal;
+        this._build(unit);
+        requestAnimationFrame(() => this._scrollToVal(displayVal, true));
+      }
+    }
+
+    const findSizeBtn = document.getElementById('findSizeBtn');
+    const sizeModal   = document.getElementById('sizeModal');
+    const modalClose  = document.getElementById('modalClose');
+    const unitToggle  = document.getElementById('unitToggle');
+    const unitOptions = unitToggle.querySelectorAll('.unit-option');
+    const unitThumb   = unitToggle.querySelector('.unit-thumb');
+
+    let currentUnit = 'metric';
+    const sliders = {
+      age:    new NumSlider('age'),
+      weight: new NumSlider('weight'),
+      height: new NumSlider('height'),
+    };
+
+    findSizeBtn.addEventListener('click', e => {
+      e.preventDefault();
+      sizeModal.classList.add('open');
+      Object.values(sliders).forEach(s => s.init());
+    });
+
+    modalClose.addEventListener('click', () => sizeModal.classList.remove('open'));
+
+    sizeModal.addEventListener('click', e => {
+      if (e.target === sizeModal) sizeModal.classList.remove('open');
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') sizeModal.classList.remove('open');
+    });
+
+    unitOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        currentUnit = option.dataset.unit;
+        unitOptions.forEach(o => o.classList.toggle('active', o.dataset.unit === currentUnit));
+        unitThumb.style.transform = currentUnit === 'imperial' ? 'translateX(100%)' : 'translateX(0)';
+        Object.values(sliders).forEach(s => s.setUnit(currentUnit));
+      });
+    });
+  </script>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="store.js"></script>
+  <script>
+    let selectedColor = 'Sand';
+    let selectedSize  = 'S';
+
+    const wishlistBtn = document.querySelector('.btn-wishlist');
+
+    const PRODUCT = {
+      id:    'linen-blazer',
+      name:  'Linen Blazer',
+      price: 129,
+      image: 'https://placehold.co/400x500/e8e8e8/aaaaaa?text=.',
+    };
+
+    function syncWishlistBtn() {
+      const inList = Store.isInWishlist(PRODUCT.id, selectedColor, selectedSize);
+      wishlistBtn.classList.toggle('in-wishlist', inList);
+    }
+
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        swatch.classList.add('selected');
+        selectedColor = swatch.getAttribute('aria-label');
+        document.querySelector('.panel-label-value').textContent = selectedColor;
+        syncWishlistBtn();
+      });
+    });
+
+    document.querySelectorAll('.size-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedSize = btn.textContent.trim();
+        syncWishlistBtn();
+      });
+    });
+
+    document.querySelector('.btn-cart').addEventListener('click', () => {
+      Store.addToCart({ ...PRODUCT, color: selectedColor, size: selectedSize });
+      showToast('Added to cart');
+    });
+
+    wishlistBtn.addEventListener('click', () => {
+      if (Store.isInWishlist(PRODUCT.id, selectedColor, selectedSize)) {
+        Store.removeFromWishlist(PRODUCT.id, selectedColor, selectedSize);
+        wishlistBtn.classList.remove('in-wishlist');
+        showToast('Removed from wishlist');
+      } else {
+        Store.addToWishlist({ ...PRODUCT, color: selectedColor, size: selectedSize });
+        wishlistBtn.classList.add('in-wishlist');
+        showToast('Added to wishlist');
+      }
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    Store.updateBadge();
+    syncWishlistBtn();
+  </script>
+
+</body>
+</html>
