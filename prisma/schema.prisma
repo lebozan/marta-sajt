@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  price     Float
+  image     String
+  createdAt DateTime @default(now())
+}
+
 model CartItem {
   id        Int      @id @default(autoincrement())
   sessionId String

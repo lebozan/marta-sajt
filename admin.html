@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — MARTA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f9f9f9;
+      color: #111;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .admin-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      padding: 28px;
+      margin-bottom: 32px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="file"] {
+      height: 40px;
+      border: 1px solid #e5e5e5;
+      padding: 0 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #111;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input:focus { border-color: #111; }
+    input[type="file"] { padding: 8px 12px; height: auto; cursor: pointer; }
+
+    .btn {
+      height: 40px;
+      padding: 0 20px;
+      background: #111;
+      color: #fff;
+      border: none;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #333; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    .btn-outline {
+      background: #fff;
+      color: #111;
+      border: 1px solid #e5e5e5;
+    }
+
+    .btn-outline:hover { border-color: #111; background: #fff; }
+
+    .upload-result {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #666;
+      word-break: break-all;
+    }
+
+    .upload-result img {
+      display: block;
+      width: 120px;
+      aspect-ratio: 4/5;
+      object-fit: cover;
+      margin-top: 8px;
+      border: 1px solid #e5e5e5;
+    }
+
+    .status {
+      font-size: 12px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: #f0faf0;
+      border: 1px solid #c3e6c3;
+      color: #2a6a2a;
+      display: none;
+    }
+
+    .status.error {
+      background: #fff0f0;
+      border-color: #e6c3c3;
+      color: #6a2a2a;
+    }
+
+    .product-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .product-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px;
+      border: 1px solid #e5e5e5;
+      background: #fff;
+    }
+
+    .product-row img {
+      width: 48px;
+      aspect-ratio: 4/5;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .product-row-info { flex: 1; }
+    .product-row-name { font-size: 13px; font-weight: 500; }
+    .product-row-price { font-size: 12px; color: #666; margin-top: 2px; }
+    .product-row-id { font-size: 11px; color: #aaa; margin-top: 2px; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+  <div class="admin-wrap">
+    <h1>MARTA — Admin</h1>
+
+    <!-- Step 1: Upload image -->
+    <div class="card">
+      <h2>1. Upload Image</h2>
+      <div class="field">
+        <label>Image file</label>
+        <input type="file" id="imageFile" accept="image/*" />
+      </div>
+      <button class="btn" id="uploadBtn">Upload to Cloudinary</button>
+      <div class="upload-result" id="uploadResult" style="display:none"></div>
+    </div>
+
+    <!-- Step 2: Create product -->
+    <div class="card">
+      <h2>2. Create Product</h2>
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="productName" placeholder="e.g. Linen Blazer" />
+      </div>
+      <div class="field">
+        <label>Price (€)</label>
+        <input type="number" id="productPrice" placeholder="e.g. 129" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>Image URL</label>
+        <input type="text" id="productImage" placeholder="Paste Cloudinary URL or upload above" />
+      </div>
+      <button class="btn" id="createBtn">Create Product</button>
+      <div class="status" id="createStatus"></div>
+    </div>
+
+    <!-- Product list -->
+    <div class="card">
+      <h2>Products</h2>
+      <div class="product-list" id="productList">
+        <p style="font-size:13px;color:#888;">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const uploadBtn    = document.getElementById('uploadBtn');
+    const uploadResult = document.getElementById('uploadResult');
+    const createBtn    = document.getElementById('createBtn');
+    const createStatus = document.getElementById('createStatus');
+    const productList  = document.getElementById('productList');
+
+    // Upload image
+    uploadBtn.addEventListener('click', async () => {
+      const file = document.getElementById('imageFile').files[0];
+      if (!file) return showStatus(createStatus, 'Select a file first.', true);
+
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading...';
+
+      const fd = new FormData();
+      fd.append('image', file);
+
+      const r    = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await r.json();
+
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Upload to Cloudinary';
+
+      if (data.url) {
+        document.getElementById('productImage').value = data.url;
+        uploadResult.style.display = 'block';
+        uploadResult.innerHTML = `
+          <div>Uploaded — URL copied to Image URL field</div>
+          <img src="${data.url}" alt="preview" />
+        `;
+      } else {
+        uploadResult.style.display = 'block';
+        uploadResult.textContent = 'Upload failed: ' + JSON.stringify(data);
+      }
+    });
+
+    // Create product
+    createBtn.addEventListener('click', async () => {
+      const name  = document.getElementById('productName').value.trim();
+      const price = parseFloat(document.getElementById('productPrice').value);
+      const image = document.getElementById('productImage').value.trim();
+
+      if (!name || !price || !image) {
+        return showStatus(createStatus, 'Fill in all fields.', true);
+      }
+
+      const r    = await fetch('/api/products', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name, price, image }),
+      });
+      const data = await r.json();
+
+      if (data.id) {
+        showStatus(createStatus, `Product created — ID: ${data.id}`);
+        document.getElementById('productName').value  = '';
+        document.getElementById('productPrice').value = '';
+        document.getElementById('productImage').value = '';
+        uploadResult.style.display = 'none';
+        loadProducts();
+      } else {
+        showStatus(createStatus, 'Error: ' + JSON.stringify(data), true);
+      }
+    });
+
+    // Load product list
+    async function loadProducts() {
+      const products = await fetch('/api/products').then(r => r.json());
+
+      if (!products.length) {
+        productList.innerHTML = '<p style="font-size:13px;color:#888;">No products yet.</p>';
+        return;
+      }
+
+      productList.innerHTML = products.map(p => `
+        <div class="product-row" data-id="${p.id}">
+          <img src="${p.image}" alt="${p.name}" />
+          <div class="product-row-info">
+            <div class="product-row-name">${p.name}</div>
+            <div class="product-row-price">€${p.price.toFixed(2)}</div>
+            <div class="product-row-id">${p.id}</div>
+          </div>
+          <button class="btn btn-outline delete-btn">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    productList.addEventListener('click', async e => {
+      if (!e.target.classList.contains('delete-btn')) return;
+      const row = e.target.closest('.product-row');
+      if (!confirm('Delete this product?')) return;
+      await fetch(`/api/products/${row.dataset.id}`, { method: 'DELETE' });
+      loadProducts();
+    });
+
+    function showStatus(el, msg, isError = false) {
+      el.textContent = msg;
+      el.className   = 'status' + (isError ? ' error' : '');
+      el.style.display = 'block';
+    }
+
+    loadProducts();
+  </script>
+
+</body>
+</html>
