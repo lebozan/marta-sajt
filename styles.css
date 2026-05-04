@@ -919,3 +919,50 @@ main {
   border-color: #111111;
   color: #111111;
 }
+
+/* ── Footer ── */
+
+.site-footer {
+  border-top: 1px solid #e5e5e5;
+  padding: 56px 48px 32px;
+}
+
+.footer-inner {
+  display: flex;
+  gap: 64px;
+  margin-bottom: 48px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-heading {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #111111;
+  margin-bottom: 4px;
+}
+
+.footer-col a {
+  font-size: 13px;
+  font-weight: 400;
+  color: #666666;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-col a:hover {
+  color: #111111;
+}
+
+.footer-bottom {
+  font-size: 11px;
+  color: #aaaaaa;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}

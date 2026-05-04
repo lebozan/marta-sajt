@@ -17,7 +17,6 @@
       <a href="#">Home</a>
       <a href="#">New In</a>
       <a href="#">Shop</a>
-      <a href="#">About</a>
       <a href="#">Sale</a>
     </nav>
     <div class="nav-icons">
@@ -41,73 +40,63 @@
   </header>
 
   <main>
-    <section class="product-grid">
-
-      <article class="product-card">
-        <a href="product.html" class="product-image-link">
-          <img src="https://placehold.co/400x500/e8e8e8/aaaaaa?text=." alt="Linen Blazer" />
-        </a>
-        <a href="product.html" class="product-info">
-          <span class="product-name">Linen Blazer</span>
-          <span class="product-price">€129.00</span>
-        </a>
-      </article>
-
-      <article class="product-card">
-        <a href="product.html" class="product-image-link">
-          <img src="https://placehold.co/400x500/e0dbd5/aaaaaa?text=." alt="Wool Coat" />
-        </a>
-        <a href="product.html" class="product-info">
-          <span class="product-name">Wool Coat</span>
-          <span class="product-price">€249.00</span>
-        </a>
-      </article>
-
-      <article class="product-card">
-        <a href="product.html" class="product-image-link">
-          <img src="https://placehold.co/400x500/dce3e8/aaaaaa?text=." alt="Silk Slip Dress" />
-        </a>
-        <a href="product.html" class="product-info">
-          <span class="product-name">Silk Slip Dress</span>
-          <span class="product-price">€89.00</span>
-        </a>
-      </article>
-
-      <article class="product-card">
-        <a href="product.html" class="product-image-link">
-          <img src="https://placehold.co/400x500/e8e4e0/aaaaaa?text=." alt="Cashmere Knit" />
-        </a>
-        <a href="product.html" class="product-info">
-          <span class="product-name">Cashmere Knit</span>
-          <span class="product-price">€159.00</span>
-        </a>
-      </article>
-
-      <article class="product-card">
-        <a href="product.html" class="product-image-link">
-          <img src="https://placehold.co/400x500/e5e8e0/aaaaaa?text=." alt="Wide Leg Trousers" />
-        </a>
-        <a href="product.html" class="product-info">
-          <span class="product-name">Wide Leg Trousers</span>
-          <span class="product-price">€99.00</span>
-        </a>
-      </article>
-
-      <article class="product-card">
-        <a href="product.html" class="product-image-link">
-          <img src="https://placehold.co/400x500/e8e0e8/aaaaaa?text=." alt="Oversized Shirt" />
-        </a>
-        <a href="product.html" class="product-info">
-          <span class="product-name">Oversized Shirt</span>
-          <span class="product-price">€69.00</span>
-        </a>
-      </article>
-
-    </section>
+    <section class="product-grid" id="productGrid"></section>
   </main>
 
   <script src="store.js"></script>
-  <script>Store.updateBadge();</script>
+  <script>
+    async function loadProducts() {
+      const products = await fetch('/api/products').then(r => r.json());
+      const grid = document.getElementById('productGrid');
+
+      if (!products.length) {
+        grid.innerHTML = '<p style="padding:80px 0;text-align:center;color:#888;font-size:13px;">No products yet.</p>';
+        return;
+      }
+
+      grid.innerHTML = products.map(p => `
+        <article class="product-card">
+          <a href="product.html?id=${p.id}" class="product-image-link">
+            <img src="${p.image}" alt="${p.name}" />
+          </a>
+          <a href="product.html?id=${p.id}" class="product-info">
+            <span class="product-name">${p.name}</span>
+            <span class="product-price">€${p.price.toFixed(2)}</span>
+          </a>
+        </article>
+      `).join('');
+    }
+
+    loadProducts();
+    Store.updateBadge();
+  </script>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <p class="footer-heading">Company</p>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Careers</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-heading">Shopping</p>
+        <a href="#">Delivery &amp; Shipping</a>
+        <a href="#">Returns &amp; Exchanges</a>
+        <a href="#">Size Guide</a>
+        <a href="#">Gift Cards</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-heading">Legal</p>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms &amp; Conditions</a>
+        <a href="#">Cookie Policy</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2025 MARTA. All rights reserved.</span>
+    </div>
+  </footer>
 
 </body>
 </html>

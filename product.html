@@ -17,7 +17,6 @@
       <a href="index.html">Home</a>
       <a href="#">New In</a>
       <a href="#">Shop</a>
-      <a href="#">About</a>
       <a href="#">Sale</a>
     </nav>
     <div class="nav-icons">
@@ -42,16 +41,13 @@
 
   <div class="product-detail">
 
-    <div class="product-images">
-      <img src="https://placehold.co/800x1000/e8e8e8/aaaaaa?text=." alt="Linen Blazer — view 1" />
-      <img src="https://placehold.co/800x1000/e0dbd5/aaaaaa?text=." alt="Linen Blazer — view 2" />
-      <img src="https://placehold.co/800x1000/dce3e8/aaaaaa?text=." alt="Linen Blazer — view 3" />
-      <img src="https://placehold.co/800x1000/e8e4e0/aaaaaa?text=." alt="Linen Blazer — view 4" />
+    <div class="product-images" id="productImages">
+      <img src="https://placehold.co/800x1000/e8e8e8/aaaaaa?text=." alt="Loading..." />
     </div>
 
     <aside class="product-panel">
-      <h1 class="panel-name">Linen Blazer</h1>
-      <p class="panel-price">€129.00</p>
+      <h1 class="panel-name" id="panelName">—</h1>
+      <p class="panel-price" id="panelPrice">—</p>
 
       <div class="panel-section">
         <p class="panel-label">Color — <span class="panel-label-value">Sand</span></p>
@@ -326,14 +322,29 @@
 
     const wishlistBtn = document.querySelector('.btn-wishlist');
 
-    const PRODUCT = {
-      id:    'linen-blazer',
-      name:  'Linen Blazer',
-      price: 129,
-      image: 'https://placehold.co/400x500/e8e8e8/aaaaaa?text=.',
-    };
+    let PRODUCT = null;
+
+    async function init() {
+      const id = new URLSearchParams(window.location.search).get('id');
+      if (id) {
+        const r = await fetch(`/api/products/${id}`);
+        if (r.ok) {
+          const data = await r.json();
+          PRODUCT = { id: data.id, name: data.name, price: data.price, image: data.image };
+          document.title = `${data.name} — MARTA`;
+          document.getElementById('panelName').textContent  = data.name;
+          document.getElementById('panelPrice').textContent = `€${data.price.toFixed(2)}`;
+          document.getElementById('productImages').innerHTML =
+            `<img src="${data.image}" alt="${data.name}" />`;
+        }
+      }
+
+      await Store.updateBadge();
+      await syncWishlistBtn();
+    }
 
     async function syncWishlistBtn() {
+      if (!PRODUCT) return;
       const item = await Store.findInWishlist(PRODUCT.id, selectedColor, selectedSize);
       wishlistBtn.classList.toggle('in-wishlist', !!item);
     }
@@ -358,11 +369,13 @@
     });
 
     document.querySelector('.btn-cart').addEventListener('click', async () => {
+      if (!PRODUCT) return;
       await Store.addToCart({ ...PRODUCT, color: selectedColor, size: selectedSize });
       showToast('Added to cart');
     });
 
     wishlistBtn.addEventListener('click', async () => {
+      if (!PRODUCT) return;
       const existing = await Store.findInWishlist(PRODUCT.id, selectedColor, selectedSize);
       if (existing) {
         await Store.removeFromWishlist(existing.id);
@@ -382,9 +395,35 @@
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
 
-    Store.updateBadge();
-    syncWishlistBtn();
+    init();
   </script>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <p class="footer-heading">Company</p>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Careers</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-heading">Shopping</p>
+        <a href="#">Delivery &amp; Shipping</a>
+        <a href="#">Returns &amp; Exchanges</a>
+        <a href="#">Size Guide</a>
+        <a href="#">Gift Cards</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-heading">Legal</p>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms &amp; Conditions</a>
+        <a href="#">Cookie Policy</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2025 MARTA. All rights reserved.</span>
+    </div>
+  </footer>
 
 </body>
 </html>
