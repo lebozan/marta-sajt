@@ -43,3 +43,24 @@ model WishlistItem {
 
   @@unique([sessionId, productId, color, size])
 }
+
+model Order {
+  id        String      @id @default(cuid())
+  sessionId String
+  paypalId  String      @unique
+  status    String
+  total     Float
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+}
+
+model OrderItem {
+  id       Int    @id @default(autoincrement())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id])
+  name     String
+  price    Float
+  quantity Int
+  color    String
+  size     String
+}

@@ -41,6 +41,12 @@
 
   <main class="bag-page">
 
+    <div class="empty-state" id="orderSuccess" hidden>
+      <p class="empty-title">Order placed!</p>
+      <p style="margin-bottom:24px;color:#555">Your payment was successful. Total: <strong id="orderTotal"></strong></p>
+      <a href="index.html" class="empty-cta">Continue Shopping</a>
+    </div>
+
     <div class="empty-state" id="emptyState" hidden>
       <p class="empty-title">Your cart is empty</p>
       <a href="index.html" class="empty-cta">Continue Shopping</a>
@@ -62,7 +68,7 @@
         <div class="summary-line summary-total">
           <span>Total</span><span id="summaryTotal">—</span>
         </div>
-        <button class="btn-checkout">Checkout</button>
+        <div id="paypal-button-container" style="margin-top:12px;min-height:48px"></div>
       </aside>
 
     </div>
@@ -115,6 +121,8 @@
       const subtotal = cart.reduce((n, i) => n + i.price * i.quantity, 0);
       document.getElementById('summarySubtotal').textContent = fmt(subtotal);
       document.getElementById('summaryTotal').textContent = fmt(subtotal);
+
+      initPayPalButton();
     }
 
     cartItemsEl.addEventListener('click', async e => {
@@ -134,6 +142,46 @@
         await renderCart();
       }
     });
+
+    let paypalInitialized = false;
+
+    function showSuccess(total) {
+      document.getElementById('cartLayout').hidden = true;
+      document.getElementById('orderSuccess').hidden = false;
+      document.getElementById('orderTotal').textContent = fmt(total);
+      Store.updateBadge();
+    }
+
+    async function initPayPalButton() {
+      if (paypalInitialized) return;
+      paypalInitialized = true;
+
+      const { clientId } = await fetch('/api/checkout/config').then(r => r.json());
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=EUR`;
+      document.head.appendChild(script);
+
+      script.onload = () => {
+        paypal.Buttons({
+          createOrder: async () => {
+            const res = await fetch('/api/checkout/create-order', { method: 'POST' });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            return data.id;
+          },
+          onApprove: async (data) => {
+            const res = await fetch('/api/checkout/capture-order', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderID: data.orderID }),
+            });
+            const order = await res.json();
+            showSuccess(order.total);
+          },
+          onError: () => alert('Payment failed. Please try again.'),
+        }).render('#paypal-button-container');
+      };
+    }
 
     renderCart();
     Store.updateBadge();

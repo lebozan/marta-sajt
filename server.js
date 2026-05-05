@@ -115,6 +115,87 @@ app.delete('/api/cart/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── PayPal ──
+
+const PAYPAL_BASE = process.env.PAYPAL_ENV === 'production'
+  ? 'https://api-m.paypal.com'
+  : 'https://api-m.sandbox.paypal.com';
+
+async function getPayPalToken() {
+  const res = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + Buffer.from(
+        `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
+      ).toString('base64'),
+    },
+    body: 'grant_type=client_credentials',
+  });
+  const data = await res.json();
+  return data.access_token;
+}
+
+app.get('/api/checkout/config', (req, res) => {
+  res.json({ clientId: process.env.PAYPAL_CLIENT_ID });
+});
+
+app.post('/api/checkout/create-order', async (req, res) => {
+  const items = await prisma.cartItem.findMany({ where: { sessionId: req.sid } });
+  if (items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
+
+  const total = items.reduce((n, i) => n + i.price * i.quantity, 0);
+  const token = await getPayPalToken();
+
+  const response = await fetch(`${PAYPAL_BASE}/v2/checkout/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({
+      intent: 'CAPTURE',
+      purchase_units: [{ amount: { currency_code: 'EUR', value: total.toFixed(2) } }],
+    }),
+  });
+
+  const order = await response.json();
+  res.json({ id: order.id });
+});
+
+app.post('/api/checkout/capture-order', async (req, res) => {
+  const { orderID } = req.body;
+  const token = await getPayPalToken();
+
+  const response = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderID}/capture`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+  });
+
+  const capture = await response.json();
+  if (capture.status !== 'COMPLETED') {
+    return res.status(400).json({ error: 'Payment not completed' });
+  }
+
+  const cartItems = await prisma.cartItem.findMany({ where: { sessionId: req.sid } });
+  const total = cartItems.reduce((n, i) => n + i.price * i.quantity, 0);
+
+  const order = await prisma.order.create({
+    data: {
+      sessionId: req.sid,
+      paypalId: orderID,
+      status: 'COMPLETED',
+      total,
+      items: {
+        create: cartItems.map(i => ({
+          name: i.name, price: i.price, quantity: i.quantity, color: i.color, size: i.size,
+        })),
+      },
+    },
+  });
+
+  await prisma.cartItem.deleteMany({ where: { sessionId: req.sid } });
+
+  res.json({ id: order.id, total: order.total });
+});
+
 // ── Wishlist ──
 
 app.get('/api/wishlist', async (req, res) => {
