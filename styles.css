@@ -990,6 +990,10 @@ main {
     padding: 0 32px;
   }
 
+  .nav-icons {
+    right: 32px;
+  }
+
   main {
     padding: 40px 32px 64px;
   }
@@ -1012,15 +1016,38 @@ main {
 @media (max-width: 768px) {
   /* Navbar */
   .navbar {
-    padding: 0 20px;
+    padding: 0 16px;
+    height: 64px;
+    justify-content: space-between;
+    position: relative;
+  }
+
+  .nav-center {
+    gap: 12px;
+  }
+
+  .nav-center .nav-logo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .nav-center .nav-link {
-    display: none;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .nav-logo-img {
+    height: 56px;
   }
 
   .nav-icons {
-    right: 20px;
+    position: static;
+    gap: 14px;
+    z-index: 1;
   }
 
   /* Product grid */
