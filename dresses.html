@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wishlist — MARTA</title>
+  <title>Dresses — MARTA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -39,80 +39,35 @@
     </div>
   </header>
 
-  <main class="wishlist-page">
-
-    <div class="empty-state" id="emptyState" hidden>
-      <p class="empty-title">Your wishlist is empty</p>
-      <a href="index.html" class="empty-cta">Browse Items</a>
-    </div>
-
-    <div class="wishlist-grid" id="wishlistGrid"></div>
-
+  <main>
+    <section class="product-grid" id="productGrid"></section>
   </main>
-
-  <div id="toast" class="toast"></div>
 
   <script src="store.js"></script>
   <script>
-    const wishlistGridEl = document.getElementById('wishlistGrid');
-    const emptyStateEl   = document.getElementById('emptyState');
+    async function loadProducts() {
+      const products = await fetch('/api/products?type=dress').then(r => r.json());
+      const grid = document.getElementById('productGrid');
 
-    async function renderWishlist() {
-      const list = await Store.getWishlist();
-
-      if (list.length === 0) {
-        emptyStateEl.hidden = false;
-        wishlistGridEl.innerHTML = '';
+      if (!products.length) {
+        grid.innerHTML = '<p style="padding:80px 0;text-align:center;color:#888;font-size:13px;">No dresses yet.</p>';
         return;
       }
 
-      emptyStateEl.hidden = true;
-      wishlistGridEl.innerHTML = list.map(item => `
-        <article class="wishlist-card" data-item-id="${item.id}">
-          <a href="product.html" class="product-image-link">
-            <img src="${item.image}" alt="${item.name}" />
+      grid.innerHTML = products.map(p => `
+        <article class="product-card">
+          <a href="product.html?id=${p.id}" class="product-image-link">
+            <img src="${p.image}" alt="${p.name}" />
           </a>
-          <div class="product-info" style="text-decoration:none;color:inherit;">
-            <span class="product-name">${item.name}</span>
-            <span class="product-price">€${item.price.toFixed(2)}</span>
-          </div>
-          <p class="wishlist-meta">${item.color} · ${item.size}</p>
-          <div class="wishlist-actions">
-            <button class="btn-wl-cart">Add to Cart</button>
-            <button class="btn-wl-remove">Remove</button>
-          </div>
+          <a href="product.html?id=${p.id}" class="product-info">
+            <span class="product-name">${p.name}</span>
+            <span class="product-price">€${p.price.toFixed(2)}</span>
+          </a>
         </article>
       `).join('');
     }
 
-    wishlistGridEl.addEventListener('click', async e => {
-      const card = e.target.closest('.wishlist-card');
-      if (!card) return;
-      const itemId = parseInt(card.dataset.itemId);
-      const list = await Store.getWishlist();
-      const item = list.find(i => i.id === itemId);
-      if (!item) return;
-
-      if (e.target.classList.contains('btn-wl-cart')) {
-        await Store.addToCart({ id: item.productId, name: item.name, price: item.price, image: item.image, color: item.color, size: item.size });
-        showToast('Added to cart');
-        return;
-      }
-
-      if (e.target.classList.contains('btn-wl-remove')) {
-        await Store.removeFromWishlist(itemId);
-        await renderWishlist();
-      }
-    });
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      toast.textContent = msg;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2000);
-    }
-
-    renderWishlist();
+    loadProducts();
     Store.updateBadge();
   </script>
 

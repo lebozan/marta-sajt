@@ -64,7 +64,8 @@
 
     input[type="text"],
     input[type="number"],
-    input[type="file"] {
+    input[type="file"],
+    select {
       height: 40px;
       border: 1px solid #e5e5e5;
       padding: 0 12px;
@@ -77,7 +78,7 @@
       width: 100%;
     }
 
-    input:focus { border-color: #111; }
+    input:focus, select:focus { border-color: #111; }
     input[type="file"] { padding: 8px 12px; height: auto; cursor: pointer; }
 
     .btn {
@@ -193,6 +194,13 @@
         <label>Image URL</label>
         <input type="text" id="productImage" placeholder="Paste Cloudinary URL or upload above" />
       </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="productType">
+          <option value="dress">Dress</option>
+          <option value="miraz">Miraz</option>
+        </select>
+      </div>
       <button class="btn" id="createBtn">Create Product</button>
       <div class="status" id="createStatus"></div>
     </div>
@@ -248,6 +256,7 @@
       const name  = document.getElementById('productName').value.trim();
       const price = parseFloat(document.getElementById('productPrice').value);
       const image = document.getElementById('productImage').value.trim();
+      const type  = document.getElementById('productType').value;
 
       if (!name || !price || !image) {
         return showStatus(createStatus, 'Fill in all fields.', true);
@@ -256,7 +265,7 @@
       const r    = await fetch('/api/products', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, price, image }),
+        body:    JSON.stringify({ name, price, image, type }),
       });
       const data = await r.json();
 
@@ -286,7 +295,7 @@
           <img src="${p.image}" alt="${p.name}" />
           <div class="product-row-info">
             <div class="product-row-name">${p.name}</div>
-            <div class="product-row-price">€${p.price.toFixed(2)}</div>
+            <div class="product-row-price">€${p.price.toFixed(2)} · ${p.type}</div>
             <div class="product-row-id">${p.id}</div>
           </div>
           <button class="btn btn-outline delete-btn">Delete</button>

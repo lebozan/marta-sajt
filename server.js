@@ -57,7 +57,8 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
 // ── Products ──
 
 app.get('/api/products', async (req, res) => {
-  const products = await prisma.product.findMany({ orderBy: { createdAt: 'desc' } });
+  const where = req.query.type ? { type: req.query.type } : {};
+  const products = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } });
   res.json(products);
 });
 
@@ -68,8 +69,8 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-  const { name, price, image } = req.body;
-  const product = await prisma.product.create({ data: { name, price, image } });
+  const { name, price, image, type = 'dress' } = req.body;
+  const product = await prisma.product.create({ data: { name, price, image, type } });
   res.json(product);
 });
 
