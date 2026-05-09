@@ -212,7 +212,7 @@
           document.getElementById('panelName').textContent  = data.name;
           document.getElementById('panelPrice').textContent = `€${data.price.toFixed(2)}`;
           document.getElementById('productImages').innerHTML =
-            `<img src="${data.image}" alt="${data.name}" />`;
+            `<img src="${cloudinaryUrl(data.image, 1200)}" alt="${data.name}" />`;
         }
       }
 
