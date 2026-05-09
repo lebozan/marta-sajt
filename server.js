@@ -62,6 +62,17 @@ app.get('/api/products', async (req, res) => {
   res.json(products);
 });
 
+app.get('/api/products/search', async (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (!q) return res.json([]);
+  const products = await prisma.product.findMany({
+    where: { name: { contains: q, mode: 'insensitive' } },
+    take: 3,
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(products);
+});
+
 app.get('/api/products/:id', async (req, res) => {
   const product = await prisma.product.findUnique({ where: { id: req.params.id } });
   if (!product) return res.status(404).json({ error: 'Not found' });

@@ -20,7 +20,7 @@
       <a href="miraz.html" class="nav-link">Miraz</a>
     </div>
     <div class="nav-icons">
-      <a href="#" aria-label="Search">
+      <a href="#" aria-label="Search" id="searchBtn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
@@ -38,6 +38,11 @@
       </a>
     </div>
   </header>
+
+  <div class="search-panel" id="searchPanel">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search products..." autocomplete="off" />
+    <div class="search-results" id="searchResults"></div>
+  </div>
 
   <div class="product-detail">
 
@@ -94,203 +99,84 @@
         </svg>
       </button>
 
-      <h2 class="modal-title" id="modalTitle">Find Your Perfect Fit</h2>
+      <h2 class="modal-title" id="modalTitle">Size Guide (cm)</h2>
 
-      <div class="modal-row">
-        <div class="gender-toggle">
-          <label class="gender-option">
-            <input type="radio" name="gender" value="female" checked />
-            <span>Female</span>
-          </label>
-          <label class="gender-option">
-            <input type="radio" name="gender" value="male" />
-            <span>Male</span>
-          </label>
-        </div>
-
-        <div class="unit-toggle" id="unitToggle">
-          <span class="unit-option active" data-unit="metric">cm / kg</span>
-          <span class="unit-option" data-unit="imperial">in / lb</span>
-          <span class="unit-thumb"></span>
-        </div>
-      </div>
-
-      <div class="measurements">
-
-        <div class="slider-row" data-field="age">
-          <span class="slider-label">Age</span>
-          <div class="slider-wrap">
-            <div class="slider-track"></div>
-          </div>
-          <span class="slider-display"><span class="slider-val">25</span><span class="slider-unit"> yrs</span></span>
-        </div>
-
-        <div class="slider-row" data-field="weight">
-          <span class="slider-label">Weight</span>
-          <div class="slider-wrap">
-            <div class="slider-track"></div>
-          </div>
-          <span class="slider-display"><span class="slider-val">70</span><span class="slider-unit"> kg</span></span>
-        </div>
-
-        <div class="slider-row" data-field="height">
-          <span class="slider-label">Height</span>
-          <div class="slider-wrap">
-            <div class="slider-track"></div>
-          </div>
-          <span class="slider-display"><span class="slider-val">170</span><span class="slider-unit"> cm</span></span>
-        </div>
-
+      <div class="size-guide-table-wrap">
+        <table class="size-guide-table">
+          <thead>
+            <tr>
+              <th>Size</th>
+              <th>Bust</th>
+              <th>Underbust</th>
+              <th>Waist</th>
+              <th>Hips</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>XXS</td>
+              <td>79 - 82</td>
+              <td>65 - 68</td>
+              <td>59 - 61</td>
+              <td>86 - 89</td>
+            </tr>
+            <tr>
+              <td>XS</td>
+              <td>83 - 86</td>
+              <td>69 - 72</td>
+              <td>62 - 65</td>
+              <td>90 - 93</td>
+            </tr>
+            <tr>
+              <td>S</td>
+              <td>87 - 90</td>
+              <td>73 - 76</td>
+              <td>66 - 69</td>
+              <td>94 - 97</td>
+            </tr>
+            <tr>
+              <td>M</td>
+              <td>91 - 94</td>
+              <td>77 - 80</td>
+              <td>70 - 73</td>
+              <td>98 - 101</td>
+            </tr>
+            <tr>
+              <td>L</td>
+              <td>95 - 98</td>
+              <td>81 - 84</td>
+              <td>74 - 77</td>
+              <td>102 - 105</td>
+            </tr>
+            <tr>
+              <td>XL</td>
+              <td>99 - 102</td>
+              <td>85 - 88</td>
+              <td>78 - 81</td>
+              <td>106 - 109</td>
+            </tr>
+            <tr>
+              <td>ONE-SIZE</td>
+              <td>87 - 98</td>
+              <td></td>
+              <td>66 - 77</td>
+              <td>94 - 105</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
     </div>
   </div>
 
   <script>
-    const ITEM_W = 44;
-
-    const FIELDS = {
-      age:    { metric: { min: 18,  max: 100, unit: 'yrs', def: 25  }, imperial: null },
-      weight: { metric: { min: 30,  max: 180, unit: 'kg',  def: 70  }, imperial: { min: 66,  max: 397, unit: 'lb', def: 154 } },
-      height: { metric: { min: 130, max: 240, unit: 'cm',  def: 170 }, imperial: { min: 51,  max: 94,  unit: 'in', def: 67  } },
-    };
-
-    function toImperial(field, val) {
-      if (field === 'weight') return Math.round(val * 2.2046);
-      if (field === 'height') return Math.round(val / 2.54);
-      return val;
-    }
-
-    function toMetric(field, val) {
-      if (field === 'weight') return Math.round(val / 2.2046);
-      if (field === 'height') return Math.round(val * 2.54);
-      return val;
-    }
-
-    function inchesToFeetStr(inches) {
-      return `${Math.floor(inches / 12)}'${inches % 12}"`;
-    }
-
-    class NumSlider {
-      constructor(field) {
-        this.field  = field;
-        this.row    = document.querySelector(`.slider-row[data-field="${field}"]`);
-        this.track  = this.row.querySelector('.slider-track');
-        this.valEl  = this.row.querySelector('.slider-val');
-        this.unitEl = this.row.querySelector('.slider-unit');
-        this.unit   = 'metric';
-        this.metricVal = FIELDS[field].metric.def;
-        this._build('metric');
-        this._attachDrag();
-        this._attachScroll();
-      }
-
-      _build(unit) {
-        const cfg = FIELDS[this.field][unit] || FIELDS[this.field].metric;
-        this._cfg = cfg;
-        this.track.innerHTML = '';
-        for (let v = cfg.min; v <= cfg.max; v++) {
-          const el = document.createElement('div');
-          el.className = 'num-item';
-          el.textContent = v;
-          this.track.appendChild(el);
-        }
-        this._items = Array.from(this.track.children);
-      }
-
-      _scrollToVal(displayVal, instant) {
-        const idx = Math.max(0, Math.min(this._items.length - 1, displayVal - this._cfg.min));
-        const target = idx * ITEM_W;
-        if (instant) {
-          this.track.scrollLeft = target;
-          this._markActive(idx);
-        } else {
-          this.track.scrollTo({ left: target, behavior: 'smooth' });
-        }
-      }
-
-      _markActive(idx) {
-        idx = Math.max(0, Math.min(this._items.length - 1, idx));
-        this._items.forEach((el, i) => el.classList.toggle('active', i === idx));
-        const val = this._cfg.min + idx;
-        if (this.field === 'height' && this.unit === 'imperial') {
-          this.valEl.textContent = inchesToFeetStr(val);
-          this.unitEl.textContent = '';
-        } else {
-          this.valEl.textContent = val;
-          this.unitEl.textContent = ' ' + this._cfg.unit;
-        }
-        this.metricVal = this.unit === 'metric' ? val : toMetric(this.field, val);
-      }
-
-      _attachScroll() {
-        let timer;
-        this.track.addEventListener('scroll', () => {
-          clearTimeout(timer);
-          timer = setTimeout(() => {
-            this._markActive(Math.round(this.track.scrollLeft / ITEM_W));
-          }, 60);
-        });
-      }
-
-      _attachDrag() {
-        let dragging = false, startX = 0, scrollStart = 0;
-        this.track.addEventListener('mousedown', e => {
-          dragging = true;
-          startX = e.clientX;
-          scrollStart = this.track.scrollLeft;
-          e.preventDefault();
-        });
-        window.addEventListener('mousemove', e => {
-          if (!dragging) return;
-          this.track.scrollLeft = scrollStart - (e.clientX - startX);
-        });
-        window.addEventListener('mouseup', () => {
-          if (!dragging) return;
-          dragging = false;
-          const idx = Math.round(this.track.scrollLeft / ITEM_W);
-          this.track.scrollTo({ left: idx * ITEM_W, behavior: 'smooth' });
-        });
-      }
-
-      init() {
-        requestAnimationFrame(() => {
-          const displayVal = this.unit === 'imperial'
-            ? toImperial(this.field, this.metricVal)
-            : this.metricVal;
-          this._scrollToVal(displayVal, true);
-        });
-      }
-
-      setUnit(unit) {
-        if (this.unit === unit) return;
-        this.unit = unit;
-        const displayVal = unit === 'imperial'
-          ? toImperial(this.field, this.metricVal)
-          : this.metricVal;
-        this._build(unit);
-        requestAnimationFrame(() => this._scrollToVal(displayVal, true));
-      }
-    }
-
     const findSizeBtn = document.getElementById('findSizeBtn');
     const sizeModal   = document.getElementById('sizeModal');
     const modalClose  = document.getElementById('modalClose');
-    const unitToggle  = document.getElementById('unitToggle');
-    const unitOptions = unitToggle.querySelectorAll('.unit-option');
-    const unitThumb   = unitToggle.querySelector('.unit-thumb');
-
-    let currentUnit = 'metric';
-    const sliders = {
-      age:    new NumSlider('age'),
-      weight: new NumSlider('weight'),
-      height: new NumSlider('height'),
-    };
 
     findSizeBtn.addEventListener('click', e => {
       e.preventDefault();
       sizeModal.classList.add('open');
-      Object.values(sliders).forEach(s => s.init());
     });
 
     modalClose.addEventListener('click', () => sizeModal.classList.remove('open'));
@@ -301,15 +187,6 @@
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') sizeModal.classList.remove('open');
-    });
-
-    unitOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        currentUnit = option.dataset.unit;
-        unitOptions.forEach(o => o.classList.toggle('active', o.dataset.unit === currentUnit));
-        unitThumb.style.transform = currentUnit === 'imperial' ? 'translateX(100%)' : 'translateX(0)';
-        Object.values(sliders).forEach(s => s.setUnit(currentUnit));
-      });
     });
   </script>
 
@@ -424,5 +301,6 @@
     </div>
   </footer>
 
+  <script src="search.js"></script>
 </body>
 </html>
