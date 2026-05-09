@@ -174,38 +174,55 @@ app.post('/api/checkout/create-order', async (req, res) => {
 
 app.post('/api/checkout/capture-order', async (req, res) => {
   const { orderID } = req.body;
-  const token = await getPayPalToken();
 
-  const response = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderID}/capture`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-  });
-
-  const capture = await response.json();
-  if (capture.status !== 'COMPLETED') {
-    return res.status(400).json({ error: 'Payment not completed' });
+  let capture;
+  try {
+    const token = await getPayPalToken();
+    const response = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderID}/capture`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    });
+    capture = await response.json();
+  } catch (err) {
+    console.error('[capture-order] PayPal API error:', err);
+    return res.status(502).json({ error: 'Failed to reach PayPal' });
   }
 
-  const cartItems = await prisma.cartItem.findMany({ where: { sessionId: req.sid } });
-  const total = cartItems.reduce((n, i) => n + i.price * i.quantity, 0);
+  console.log('[capture-order] PayPal status:', capture.status, 'orderID:', orderID);
 
-  const order = await prisma.order.create({
-    data: {
-      sessionId: req.sid,
-      paypalId: orderID,
-      status: 'COMPLETED',
-      total,
-      items: {
-        create: cartItems.map(i => ({
-          name: i.name, price: i.price, quantity: i.quantity, color: i.color, size: i.size,
-        })),
+  if (capture.status !== 'COMPLETED') {
+    console.error('[capture-order] Unexpected status:', JSON.stringify(capture));
+    return res.status(400).json({ error: `Payment not completed (status: ${capture.status})` });
+  }
+
+  try {
+    const cartItems = await prisma.cartItem.findMany({ where: { sessionId: req.sid } });
+    console.log('[capture-order] Cart items found:', cartItems.length, 'for session:', req.sid);
+
+    const total = cartItems.reduce((n, i) => n + i.price * i.quantity, 0);
+
+    const order = await prisma.order.create({
+      data: {
+        sessionId: req.sid,
+        paypalId: orderID,
+        status: 'COMPLETED',
+        total,
+        items: {
+          create: cartItems.map(i => ({
+            name: i.name, price: i.price, quantity: i.quantity, color: i.color, size: i.size,
+          })),
+        },
       },
-    },
-  });
+    });
 
-  await prisma.cartItem.deleteMany({ where: { sessionId: req.sid } });
+    await prisma.cartItem.deleteMany({ where: { sessionId: req.sid } });
 
-  res.json({ id: order.id, total: order.total });
+    console.log('[capture-order] Order created:', order.id);
+    res.json({ id: order.id, total: order.total });
+  } catch (err) {
+    console.error('[capture-order] DB error:', err);
+    res.status(500).json({ error: 'Order could not be saved' });
+  }
 });
 
 // ── Wishlist ──

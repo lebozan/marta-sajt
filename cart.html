@@ -181,9 +181,16 @@
               body: JSON.stringify({ orderID: data.orderID }),
             });
             const order = await res.json();
+            if (!res.ok) {
+              alert(`Payment was received but order could not be saved: ${order.error}`);
+              return;
+            }
             showSuccess(order.total);
           },
-          onError: () => alert('Payment failed. Please try again.'),
+          onError: (err) => {
+            console.error('PayPal error:', err);
+            alert('Payment failed. Please try again.');
+          },
         }).render('#paypal-button-container');
       };
     }
