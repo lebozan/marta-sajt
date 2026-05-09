@@ -174,7 +174,7 @@
             if (data.error) throw new Error(data.error);
             return data.id;
           },
-          onApprove: async (data) => {
+          onApprove: async (data, actions) => {
             const res = await fetch('/api/checkout/capture-order', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -182,6 +182,9 @@
             });
             const order = await res.json();
             if (!res.ok) {
+              if (order.error === 'INSTRUMENT_DECLINED') {
+                return actions.restart();
+              }
               alert(`Payment was received but order could not be saved: ${order.error}`);
               return;
             }

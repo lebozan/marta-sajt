@@ -191,6 +191,10 @@ app.post('/api/checkout/capture-order', async (req, res) => {
   console.log('[capture-order] PayPal status:', capture.status, 'orderID:', orderID);
 
   if (capture.status !== 'COMPLETED') {
+    const declined = capture.details?.some(d => d.issue === 'INSTRUMENT_DECLINED');
+    if (declined) {
+      return res.status(422).json({ error: 'INSTRUMENT_DECLINED' });
+    }
     console.error('[capture-order] Unexpected status:', JSON.stringify(capture));
     return res.status(400).json({ error: `Payment not completed (status: ${capture.status})` });
   }
