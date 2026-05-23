@@ -52,7 +52,7 @@
 
     <aside class="product-panel">
       <h1 class="panel-name" id="panelName">—</h1>
-      <p class="panel-price" id="panelPrice">—</p>
+      <p class="panel-price" id="panelPrice"></p>
 
       <div class="panel-section">
         <p class="panel-label">Color — <span class="panel-label-value">Sand</span></p>
@@ -210,9 +210,11 @@
           PRODUCT = { id: data.id, name: data.name, price: data.price, image: data.image };
           document.title = `${data.name} — MARTA`;
           document.getElementById('panelName').textContent  = data.name;
-          document.getElementById('panelPrice').textContent = `€${data.price.toFixed(2)}`;
-          document.getElementById('productImages').innerHTML =
-            `<img src="${cloudinaryUrl(data.image, 1200)}" alt="${data.name}" />`;
+          // document.getElementById('panelPrice').textContent = `€${data.price.toFixed(2)}`;
+          const imgs = (data.images && data.images.length) ? data.images : [data.image];
+          document.getElementById('productImages').innerHTML = imgs
+            .map(url => `<img src="${cloudinaryUrl(url, 1200)}" alt="${data.name}" />`)
+            .join('');
         }
       }
 

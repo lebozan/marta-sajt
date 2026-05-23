@@ -68,6 +68,7 @@ const Store = {
   async updateBadge() {
     const cfg = await this.getConfig();
     if (!cfg.paymentsEnabled) {
+      document.body.classList.add('payments-off');
       document.querySelectorAll('.nav-cart').forEach(el => { el.hidden = true; });
       return;
     }

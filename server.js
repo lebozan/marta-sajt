@@ -87,8 +87,20 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-  const { name, price, image, type = 'dress' } = req.body;
-  const product = await prisma.product.create({ data: { name, price, image, type } });
+  const { name, price, images = [], type = 'dress' } = req.body;
+  if (!images.length) return res.status(400).json({ error: 'At least one image required' });
+  const product = await prisma.product.create({ data: { name, price, image: images[0], images, type } });
+  res.json(product);
+});
+
+app.patch('/api/products/:id', async (req, res) => {
+  const { name, price, images, type } = req.body;
+  const data = {};
+  if (name    !== undefined) data.name  = name;
+  if (price   !== undefined) data.price = price;
+  if (type    !== undefined) data.type  = type;
+  if (images  !== undefined) { data.images = images; data.image = images[0] ?? ''; }
+  const product = await prisma.product.update({ where: { id: req.params.id }, data });
   res.json(product);
 });
 

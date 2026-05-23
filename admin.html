@@ -191,6 +191,11 @@
     .slide-row-heading { font-size: 13px; font-weight: 500; margin-top: 2px; }
     .slide-row-cta { font-size: 11px; color: #888; margin-top: 2px; }
     .slide-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .image-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .img-item { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid #e5e5e5; }
+    .img-item img { width: 52px; height: 65px; object-fit: cover; flex-shrink: 0; }
+    .img-item-label { font-size: 11px; color: #888; flex: 1; }
   </style>
 </head>
 <body>
@@ -198,20 +203,9 @@
   <div class="admin-wrap">
     <h1>MARTA — Admin</h1>
 
-    <!-- Step 1: Upload image -->
+    <!-- Create product -->
     <div class="card">
-      <h2>1. Upload Image</h2>
-      <div class="field">
-        <label>Image file</label>
-        <input type="file" id="imageFile" accept="image/*" />
-      </div>
-      <button class="btn" id="uploadBtn">Upload to Cloudinary</button>
-      <div class="upload-result" id="uploadResult" style="display:none"></div>
-    </div>
-
-    <!-- Step 2: Create product -->
-    <div class="card">
-      <h2>2. Create Product</h2>
+      <h2>Create Product</h2>
       <div class="field">
         <label>Name</label>
         <input type="text" id="productName" placeholder="e.g. Linen Blazer" />
@@ -221,15 +215,21 @@
         <input type="number" id="productPrice" placeholder="e.g. 129" min="0" step="0.01" />
       </div>
       <div class="field">
-        <label>Image URL</label>
-        <input type="text" id="productImage" placeholder="Paste Cloudinary URL or upload above" />
-      </div>
-      <div class="field">
         <label>Type</label>
         <select id="productType">
           <option value="dress">Dress</option>
           <option value="miraz">Miraz</option>
         </select>
+      </div>
+      <div class="field">
+        <label>Images <span style="font-weight:400;color:#aaa">(first = primary)</span></label>
+        <div class="image-list" id="productImageList"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="file" id="productImageFile" accept="image/*" style="display:none" />
+          <button class="btn btn-outline" id="productUploadBtn">Upload</button>
+          <input type="text" id="productImageUrl" placeholder="or paste URL" style="flex:1;" />
+          <button class="btn btn-outline" id="productAddUrlBtn">Add</button>
+        </div>
       </div>
       <button class="btn" id="createBtn">Create Product</button>
       <div class="status" id="createStatus"></div>
@@ -241,6 +241,41 @@
       <div class="product-list" id="productList">
         <p style="font-size:13px;color:#888;">Loading...</p>
       </div>
+    </div>
+
+    <!-- Edit product -->
+    <div class="card" id="editCard" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <h2 style="margin:0;">Edit Product</h2>
+        <button class="btn btn-outline" id="editCancelBtn">Cancel</button>
+      </div>
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="editName" />
+      </div>
+      <div class="field">
+        <label>Price (€)</label>
+        <input type="number" id="editPrice" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="editType">
+          <option value="dress">Dress</option>
+          <option value="miraz">Miraz</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Images <span style="font-weight:400;color:#aaa">(first = primary)</span></label>
+        <div class="image-list" id="editImageList"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="file" id="editImageFile" accept="image/*" style="display:none" />
+          <button class="btn btn-outline" id="editUploadBtn">Upload</button>
+          <input type="text" id="editImageUrl" placeholder="or paste URL" style="flex:1;" />
+          <button class="btn btn-outline" id="editAddUrlBtn">Add</button>
+        </div>
+      </div>
+      <button class="btn" id="saveEditBtn">Save Changes</button>
+      <div class="status" id="editStatus"></div>
     </div>
 
     <!-- Carousel slides -->
@@ -285,57 +320,81 @@
   </div>
 
   <script>
-    const uploadBtn    = document.getElementById('uploadBtn');
-    const uploadResult = document.getElementById('uploadResult');
     const createBtn    = document.getElementById('createBtn');
     const createStatus = document.getElementById('createStatus');
     const productList  = document.getElementById('productList');
 
-    // Upload image
-    uploadBtn.addEventListener('click', async () => {
-      const file = document.getElementById('imageFile').files[0];
-      if (!file) return showStatus(createStatus, 'Select a file first.', true);
+    // ── Multi-image management ──
 
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = 'Uploading...';
+    let productImages = [];
 
+    function renderProductImages() {
+      const listEl = document.getElementById('productImageList');
+      if (!productImages.length) {
+        listEl.innerHTML = '<p style="font-size:12px;color:#aaa;margin-bottom:4px;">No images yet.</p>';
+        return;
+      }
+      listEl.innerHTML = productImages.map((url, i) => `
+        <div class="img-item" data-index="${i}">
+          <img src="${url}" alt="" />
+          <span class="img-item-label">${i === 0 ? 'Primary' : `Image ${i + 1}`}</span>
+          <button class="btn btn-outline img-remove-btn" style="padding:0 12px;">×</button>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('productImageList').addEventListener('click', e => {
+      if (!e.target.classList.contains('img-remove-btn')) return;
+      const idx = parseInt(e.target.closest('.img-item').dataset.index);
+      productImages.splice(idx, 1);
+      renderProductImages();
+    });
+
+    document.getElementById('productUploadBtn').addEventListener('click', () => {
+      document.getElementById('productImageFile').click();
+    });
+
+    document.getElementById('productImageFile').addEventListener('change', async () => {
+      const file = document.getElementById('productImageFile').files[0];
+      if (!file) return;
+      const btn = document.getElementById('productUploadBtn');
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
       const fd = new FormData();
       fd.append('image', file);
-
-      const r    = await fetch('/api/upload', { method: 'POST', body: fd });
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
       const data = await r.json();
-
-      uploadBtn.disabled = false;
-      uploadBtn.textContent = 'Upload to Cloudinary';
-
+      btn.disabled = false;
+      btn.textContent = 'Upload';
       if (data.url) {
-        document.getElementById('productImage').value = data.url;
-        uploadResult.style.display = 'block';
-        uploadResult.innerHTML = `
-          <div>Uploaded — URL copied to Image URL field</div>
-          <img src="${data.url}" alt="preview" />
-        `;
-      } else {
-        uploadResult.style.display = 'block';
-        uploadResult.textContent = 'Upload failed: ' + JSON.stringify(data);
+        productImages.push(data.url);
+        renderProductImages();
+        document.getElementById('productImageFile').value = '';
       }
+    });
+
+    document.getElementById('productAddUrlBtn').addEventListener('click', () => {
+      const url = document.getElementById('productImageUrl').value.trim();
+      if (!url) return;
+      productImages.push(url);
+      renderProductImages();
+      document.getElementById('productImageUrl').value = '';
     });
 
     // Create product
     createBtn.addEventListener('click', async () => {
       const name  = document.getElementById('productName').value.trim();
       const price = parseFloat(document.getElementById('productPrice').value);
-      const image = document.getElementById('productImage').value.trim();
       const type  = document.getElementById('productType').value;
 
-      if (!name || !price || !image) {
-        return showStatus(createStatus, 'Fill in all fields.', true);
+      if (!name || !price || !productImages.length) {
+        return showStatus(createStatus, 'Fill in all fields and add at least one image.', true);
       }
 
       const r    = await fetch('/api/products', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, price, image, type }),
+        body:    JSON.stringify({ name, price, images: productImages, type }),
       });
       const data = await r.json();
 
@@ -343,8 +402,8 @@
         showStatus(createStatus, `Product created — ID: ${data.id}`);
         document.getElementById('productName').value  = '';
         document.getElementById('productPrice').value = '';
-        document.getElementById('productImage').value = '';
-        uploadResult.style.display = 'none';
+        productImages = [];
+        renderProductImages();
         loadProducts();
       } else {
         showStatus(createStatus, 'Error: ' + JSON.stringify(data), true);
@@ -352,33 +411,146 @@
     });
 
     // Load product list
-    async function loadProducts() {
-      const products = await fetch('/api/products').then(r => r.json());
+    let cachedProducts = [];
 
-      if (!products.length) {
+    async function loadProducts() {
+      cachedProducts = await fetch('/api/products').then(r => r.json());
+
+      if (!cachedProducts.length) {
         productList.innerHTML = '<p style="font-size:13px;color:#888;">No products yet.</p>';
         return;
       }
 
-      productList.innerHTML = products.map(p => `
+      productList.innerHTML = cachedProducts.map(p => `
         <div class="product-row" data-id="${p.id}">
           <img src="${p.image}" alt="${p.name}" />
           <div class="product-row-info">
             <div class="product-row-name">${p.name}</div>
-            <div class="product-row-price">€${p.price.toFixed(2)} · ${p.type}</div>
+            <div class="product-row-price">€${p.price.toFixed(2)} · ${p.type}${p.images && p.images.length > 1 ? ` · ${p.images.length} images` : ''}</div>
             <div class="product-row-id">${p.id}</div>
           </div>
-          <button class="btn btn-outline delete-btn">Delete</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline edit-btn">Edit</button>
+            <button class="btn btn-outline delete-btn">Delete</button>
+          </div>
         </div>
       `).join('');
     }
 
     productList.addEventListener('click', async e => {
-      if (!e.target.classList.contains('delete-btn')) return;
       const row = e.target.closest('.product-row');
-      if (!confirm('Delete this product?')) return;
-      await fetch(`/api/products/${row.dataset.id}`, { method: 'DELETE' });
-      loadProducts();
+      if (!row) return;
+      if (e.target.classList.contains('delete-btn')) {
+        if (!confirm('Delete this product?')) return;
+        await fetch(`/api/products/${row.dataset.id}`, { method: 'DELETE' });
+        loadProducts();
+      } else if (e.target.classList.contains('edit-btn')) {
+        const product = cachedProducts.find(p => p.id === row.dataset.id);
+        if (product) openEdit(product);
+      }
+    });
+
+    // ── Edit product ──
+
+    let editImages  = [];
+    let editingId   = null;
+
+    function renderEditImages() {
+      const listEl = document.getElementById('editImageList');
+      if (!editImages.length) {
+        listEl.innerHTML = '<p style="font-size:12px;color:#aaa;margin-bottom:4px;">No images yet.</p>';
+        return;
+      }
+      listEl.innerHTML = editImages.map((url, i) => `
+        <div class="img-item" data-index="${i}">
+          <img src="${url}" alt="" />
+          <span class="img-item-label">${i === 0 ? 'Primary' : `Image ${i + 1}`}</span>
+          <button class="btn btn-outline img-remove-btn" style="padding:0 12px;">×</button>
+        </div>
+      `).join('');
+    }
+
+    function openEdit(product) {
+      editingId   = product.id;
+      editImages  = product.images && product.images.length ? [...product.images] : [product.image];
+      document.getElementById('editName').value  = product.name;
+      document.getElementById('editPrice').value = product.price;
+      document.getElementById('editType').value  = product.type;
+      document.getElementById('editStatus').style.display = 'none';
+      renderEditImages();
+      const card = document.getElementById('editCard');
+      card.style.display = 'block';
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    document.getElementById('editCancelBtn').addEventListener('click', () => {
+      document.getElementById('editCard').style.display = 'none';
+      editingId = null;
+    });
+
+    document.getElementById('editImageList').addEventListener('click', e => {
+      if (!e.target.classList.contains('img-remove-btn')) return;
+      const idx = parseInt(e.target.closest('.img-item').dataset.index);
+      editImages.splice(idx, 1);
+      renderEditImages();
+    });
+
+    document.getElementById('editUploadBtn').addEventListener('click', () => {
+      document.getElementById('editImageFile').click();
+    });
+
+    document.getElementById('editImageFile').addEventListener('change', async () => {
+      const file = document.getElementById('editImageFile').files[0];
+      if (!file) return;
+      const btn = document.getElementById('editUploadBtn');
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+      const fd = new FormData();
+      fd.append('image', file);
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await r.json();
+      btn.disabled = false;
+      btn.textContent = 'Upload';
+      if (data.url) {
+        editImages.push(data.url);
+        renderEditImages();
+        document.getElementById('editImageFile').value = '';
+      }
+    });
+
+    document.getElementById('editAddUrlBtn').addEventListener('click', () => {
+      const url = document.getElementById('editImageUrl').value.trim();
+      if (!url) return;
+      editImages.push(url);
+      renderEditImages();
+      document.getElementById('editImageUrl').value = '';
+    });
+
+    document.getElementById('saveEditBtn').addEventListener('click', async () => {
+      const name   = document.getElementById('editName').value.trim();
+      const price  = parseFloat(document.getElementById('editPrice').value);
+      const type   = document.getElementById('editType').value;
+      const status = document.getElementById('editStatus');
+
+      if (!name || !price || !editImages.length) {
+        return showStatus(status, 'Fill in all fields and keep at least one image.', true);
+      }
+
+      const r = await fetch(`/api/products/${editingId}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ name, price, images: editImages, type }),
+      });
+      const data = await r.json();
+
+      if (data.id) {
+        showStatus(status, 'Product updated.');
+        document.getElementById('editCard').style.display = 'none';
+        editingId = null;
+        loadProducts();
+      } else {
+        showStatus(status, 'Error: ' + JSON.stringify(data), true);
+      }
     });
 
     function showStatus(el, msg, isError = false) {
@@ -387,6 +559,7 @@
       el.style.display = 'block';
     }
 
+    renderProductImages();
     loadProducts();
 
     // ── Carousel slides ──

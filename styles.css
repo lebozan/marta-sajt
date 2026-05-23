@@ -1672,3 +1672,10 @@ main {
     gap: 32px;
   }
 }
+
+/* ── Payments disabled ── */
+body.payments-off .product-price,
+body.payments-off .panel-price,
+body.payments-off .search-result-price {
+  display: none;
+}
