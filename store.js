@@ -4,6 +4,15 @@ function cloudinaryUrl(url, width) {
 }
 
 const Store = {
+  _config: null,
+
+  async getConfig() {
+    if (!this._config) {
+      this._config = await fetch('/api/config').then(r => r.json());
+    }
+    return this._config;
+  },
+
   async getCart() {
     const r = await fetch('/api/cart');
     return r.json();
@@ -57,6 +66,11 @@ const Store = {
   },
 
   async updateBadge() {
+    const cfg = await this.getConfig();
+    if (!cfg.paymentsEnabled) {
+      document.querySelectorAll('.nav-cart').forEach(el => { el.hidden = true; });
+      return;
+    }
     const cart  = await this.getCart();
     const count = cart.reduce((n, i) => n + i.quantity, 0);
     document.querySelectorAll('.cart-badge').forEach(el => {

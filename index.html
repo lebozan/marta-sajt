@@ -44,14 +44,50 @@
     <div class="search-results" id="searchResults"></div>
   </div>
 
-  <div class="hero">
-    <video class="hero-video" autoplay muted loop playsinline>
-      <source src="/pics/hero.mp4" type="video/mp4" />
-    </video>
+  <!-- Hero Carousel -->
+  <div class="hero-carousel" id="heroCarousel">
+    <div class="carousel-track" id="carouselTrack"></div>
+
+    <button class="carousel-btn carousel-prev" id="carouselPrev" aria-label="Previous slide">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <button class="carousel-btn carousel-next" id="carouselNext" aria-label="Next slide">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+
+    <div class="carousel-dots" id="carouselDots" role="tablist"></div>
   </div>
 
-  <script src="store.js"></script>
-  <script>Store.updateBadge();</script>
+  <!-- Collections Editorial -->
+  <section class="collections-section">
+    <a href="dresses.html" class="collection-tile">
+      <img src="https://placehold.co/800x1067/f9e8ec/c9607a?text=." alt="Dresses" class="collection-img" />
+      <div class="collection-overlay">
+        <p class="collection-name">Dresses</p>
+        <span class="collection-link">Shop Now</span>
+      </div>
+    </a>
+    <a href="miraz.html" class="collection-tile">
+      <img src="https://placehold.co/800x1067/e8e0d5/888888?text=." alt="Miraz" class="collection-img" />
+      <div class="collection-overlay">
+        <p class="collection-name">Miraz</p>
+        <span class="collection-link">Explore</span>
+      </div>
+    </a>
+  </section>
+
+  <!-- New Arrivals -->
+  <section class="home-section" id="newArrivalsSection">
+    <div class="section-header">
+      <h2 class="section-title">New Arrivals</h2>
+      <a href="dresses.html" class="section-view-all">View All</a>
+    </div>
+    <div class="product-grid home-grid" id="homeProductGrid"></div>
+  </section>
 
   <footer class="site-footer">
     <div class="footer-inner">
@@ -78,6 +114,100 @@
       <span>&copy; 2025 MARTA. All rights reserved.</span>
     </div>
   </footer>
+
+  <script src="store.js"></script>
+  <script>
+    Store.updateBadge();
+
+    // ── Carousel ──
+    (async function () {
+      const track  = document.getElementById('carouselTrack');
+      const dotsEl = document.getElementById('carouselDots');
+
+      let apiSlides = [];
+      try { apiSlides = await fetch('/api/carousel').then(r => r.json()); } catch (_) {}
+
+      const defaults = [
+        { image: 'https://placehold.co/1600x900/f2d0d8/c9607a?text=.', eyebrow: 'New Arrivals', heading: 'Spring\nCollection', ctaLabel: 'Shop Now', ctaLink: 'dresses.html' },
+        { image: 'https://placehold.co/1600x900/e8e0d5/888888?text=.', eyebrow: 'Exclusive', heading: 'The\nMiraz Edit', ctaLabel: 'Explore', ctaLink: 'miraz.html' },
+        { image: 'https://placehold.co/1600x900/fdf0e4/c9607a?text=.', eyebrow: 'Timeless', heading: 'Core\nEssentials', ctaLabel: 'Discover', ctaLink: 'dresses.html' },
+      ];
+      const slides = apiSlides.length ? apiSlides : defaults;
+
+      function esc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      track.innerHTML = slides.map(s => `
+        <div class="carousel-slide">
+          <img src="${esc(s.image)}" alt="${esc(s.eyebrow)}" class="carousel-img" />
+          <div class="carousel-caption">
+            <p class="carousel-eyebrow">${esc(s.eyebrow)}</p>
+            <h2 class="carousel-heading">${esc(s.heading).replace(/\n/g, '<br>')}</h2>
+            <a href="${esc(s.ctaLink)}" class="carousel-cta">${esc(s.ctaLabel)}</a>
+          </div>
+        </div>
+      `).join('');
+
+      dotsEl.innerHTML = slides.map((_, i) => `
+        <button class="carousel-dot${i === 0 ? ' active' : ''}" data-index="${i}" aria-label="Slide ${i + 1}"></button>
+      `).join('');
+
+      const dots  = dotsEl.querySelectorAll('.carousel-dot');
+      const total = slides.length;
+      let current = 0;
+      let timer;
+
+      function goTo(n) {
+        current = ((n % total) + total) % total;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+      }
+
+      function resetTimer() {
+        clearInterval(timer);
+        timer = setInterval(() => goTo(current + 1), 4500);
+      }
+
+      document.getElementById('carouselPrev').addEventListener('click', () => { goTo(current - 1); resetTimer(); });
+      document.getElementById('carouselNext').addEventListener('click', () => { goTo(current + 1); resetTimer(); });
+      dots.forEach(d => d.addEventListener('click', () => { goTo(+d.dataset.index); resetTimer(); }));
+
+      let touchX = 0;
+      const carousel = document.getElementById('heroCarousel');
+      carousel.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+      carousel.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - touchX;
+        if (Math.abs(dx) > 48) { goTo(current + (dx > 0 ? -1 : 1)); resetTimer(); }
+      });
+
+      resetTimer();
+    })();
+
+    // ── New Arrivals ──
+    (async function () {
+      const products = await fetch('/api/products').then(r => r.json());
+      const grid = document.getElementById('homeProductGrid');
+      const show  = products.slice(0, 4);
+
+      if (!show.length) {
+        document.getElementById('newArrivalsSection').hidden = true;
+        return;
+      }
+
+      grid.innerHTML = show.map(p => `
+        <article class="product-card">
+          <a href="product.html?id=${p.id}" class="product-image-link">
+            <img src="${cloudinaryUrl(p.image, 600)}" alt="${p.name}" loading="lazy" />
+          </a>
+          <a href="product.html?id=${p.id}" class="product-info">
+            <span class="product-name">${p.name}</span>
+            <span class="product-price">€${p.price.toFixed(2)}</span>
+          </a>
+        </article>
+      `).join('');
+    })();
+  </script>
 
   <script src="search.js"></script>
 </body>

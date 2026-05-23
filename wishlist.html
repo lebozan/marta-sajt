@@ -63,7 +63,7 @@
     const emptyStateEl   = document.getElementById('emptyState');
 
     async function renderWishlist() {
-      const list = await Store.getWishlist();
+      const [list, cfg] = await Promise.all([Store.getWishlist(), Store.getConfig()]);
 
       if (list.length === 0) {
         emptyStateEl.hidden = false;
@@ -83,7 +83,7 @@
           </div>
           <p class="wishlist-meta">${item.color} · ${item.size}</p>
           <div class="wishlist-actions">
-            <button class="btn-wl-cart">Add to Cart</button>
+            ${cfg.paymentsEnabled ? '<button class="btn-wl-cart">Add to Cart</button>' : ''}
             <button class="btn-wl-remove">Remove</button>
           </div>
         </article>

@@ -161,6 +161,36 @@
     .product-row-name { font-size: 13px; font-weight: 500; }
     .product-row-price { font-size: 12px; color: #666; margin-top: 2px; }
     .product-row-id { font-size: 11px; color: #aaa; margin-top: 2px; font-family: monospace; }
+
+    textarea {
+      border: 1px solid #e5e5e5;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      color: #111;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+      resize: vertical;
+    }
+    textarea:focus { border-color: #111; }
+
+    .slide-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px;
+      border: 1px solid #e5e5e5;
+      background: #fff;
+      margin-bottom: 8px;
+    }
+    .slide-row img { width: 80px; height: 50px; object-fit: cover; flex-shrink: 0; }
+    .slide-row-info { flex: 1; min-width: 0; }
+    .slide-row-eyebrow { font-size: 11px; color: #c9607a; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; }
+    .slide-row-heading { font-size: 13px; font-weight: 500; margin-top: 2px; }
+    .slide-row-cta { font-size: 11px; color: #888; margin-top: 2px; }
+    .slide-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -210,6 +240,46 @@
       <h2>Products</h2>
       <div class="product-list" id="productList">
         <p style="font-size:13px;color:#888;">Loading...</p>
+      </div>
+    </div>
+
+    <!-- Carousel slides -->
+    <div class="card">
+      <h2>Carousel</h2>
+
+      <div id="slideList" style="margin-bottom:24px;">
+        <p style="font-size:13px;color:#888;">Loading...</p>
+      </div>
+
+      <div style="border-top:1px solid #e5e5e5;padding-top:24px;">
+        <h2 style="margin-bottom:16px;">Add Slide</h2>
+        <div class="field">
+          <label>Image</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="slideImage" placeholder="Paste URL or upload" style="flex:1;" />
+            <input type="file" id="slideFile" accept="image/*" style="display:none" />
+            <button class="btn btn-outline" id="slideUploadBtn">Upload</button>
+          </div>
+          <div id="slideUploadResult" style="display:none;font-size:12px;color:#666;margin-top:6px;"></div>
+        </div>
+        <div class="field">
+          <label>Eyebrow</label>
+          <input type="text" id="slideEyebrow" placeholder="e.g. New Arrivals" />
+        </div>
+        <div class="field">
+          <label>Heading (Enter = line break on site)</label>
+          <textarea id="slideHeading" rows="2" placeholder="e.g. Spring&#10;Collection"></textarea>
+        </div>
+        <div class="field">
+          <label>Button Label</label>
+          <input type="text" id="slideCtaLabel" placeholder="Shop Now" />
+        </div>
+        <div class="field">
+          <label>Button Link</label>
+          <input type="text" id="slideCtaLink" placeholder="dresses.html" />
+        </div>
+        <button class="btn" id="addSlideBtn">Add Slide</button>
+        <div class="status" id="slideStatus"></div>
       </div>
     </div>
   </div>
@@ -318,6 +388,103 @@
     }
 
     loadProducts();
+
+    // ── Carousel slides ──
+
+    async function loadSlides() {
+      const slides = await fetch('/api/carousel').then(r => r.json());
+      const list = document.getElementById('slideList');
+      if (!slides.length) {
+        list.innerHTML = '<p style="font-size:13px;color:#888;">No slides yet.</p>';
+        return;
+      }
+      list.innerHTML = slides.map(s => `
+        <div class="slide-row" data-id="${s.id}">
+          <img src="${s.image}" alt="${s.eyebrow}" />
+          <div class="slide-row-info">
+            <div class="slide-row-eyebrow">${s.eyebrow}</div>
+            <div class="slide-row-heading">${s.heading.replace(/\n/g, ' / ')}</div>
+            <div class="slide-row-cta">${s.ctaLabel} → ${s.ctaLink}</div>
+          </div>
+          <div class="slide-row-actions">
+            <button class="btn btn-outline move-up-btn" title="Move up">↑</button>
+            <button class="btn btn-outline move-down-btn" title="Move down">↓</button>
+            <button class="btn btn-outline delete-slide-btn">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('slideList').addEventListener('click', async e => {
+      const row = e.target.closest('.slide-row');
+      if (!row) return;
+      const id = row.dataset.id;
+      if (e.target.classList.contains('delete-slide-btn')) {
+        if (!confirm('Delete this slide?')) return;
+        await fetch(`/api/carousel/${id}`, { method: 'DELETE' });
+        loadSlides();
+      } else if (e.target.classList.contains('move-up-btn')) {
+        await fetch(`/api/carousel/${id}/move`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'up' }) });
+        loadSlides();
+      } else if (e.target.classList.contains('move-down-btn')) {
+        await fetch(`/api/carousel/${id}/move`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'down' }) });
+        loadSlides();
+      }
+    });
+
+    document.getElementById('slideUploadBtn').addEventListener('click', () => {
+      document.getElementById('slideFile').click();
+    });
+
+    document.getElementById('slideFile').addEventListener('change', async () => {
+      const file = document.getElementById('slideFile').files[0];
+      if (!file) return;
+      const btn = document.getElementById('slideUploadBtn');
+      const resultEl = document.getElementById('slideUploadResult');
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+      const fd = new FormData();
+      fd.append('image', file);
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await r.json();
+      btn.disabled = false;
+      btn.textContent = 'Upload';
+      if (data.url) {
+        document.getElementById('slideImage').value = data.url;
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `<img src="${data.url}" style="width:120px;height:75px;object-fit:cover;margin-top:6px;border:1px solid #e5e5e5;" />`;
+      }
+    });
+
+    document.getElementById('addSlideBtn').addEventListener('click', async () => {
+      const image    = document.getElementById('slideImage').value.trim();
+      const eyebrow  = document.getElementById('slideEyebrow').value.trim();
+      const heading  = document.getElementById('slideHeading').value.trim();
+      const ctaLabel = document.getElementById('slideCtaLabel').value.trim();
+      const ctaLink  = document.getElementById('slideCtaLink').value.trim();
+      const status   = document.getElementById('slideStatus');
+      if (!image) return showStatus(status, 'Image URL is required.', true);
+      const r = await fetch('/api/carousel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, eyebrow, heading, ctaLabel, ctaLink }),
+      });
+      const data = await r.json();
+      if (data.id) {
+        showStatus(status, 'Slide added.');
+        document.getElementById('slideImage').value    = '';
+        document.getElementById('slideEyebrow').value  = '';
+        document.getElementById('slideHeading').value  = '';
+        document.getElementById('slideCtaLabel').value = '';
+        document.getElementById('slideCtaLink').value  = '';
+        document.getElementById('slideUploadResult').style.display = 'none';
+        loadSlides();
+      } else {
+        showStatus(status, 'Error: ' + JSON.stringify(data), true);
+      }
+    });
+
+    loadSlides();
   </script>
 
 </body>

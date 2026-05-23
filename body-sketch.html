@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Body Sketch — MARTA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="nav-center">
+      <a href="dresses.html" class="nav-link">Dresses</a>
+      <a href="index.html" class="nav-logo">
+        <img src="https://res.cloudinary.com/dkcha41gs/image/upload/v1777981668/marta/ugkc4goltm8lwr2ca2iz.png" alt="MARTA" class="nav-logo-img" />
+      </a>
+      <a href="miraz.html" class="nav-link">Miraz</a>
+    </div>
+    <div class="nav-icons">
+      <a href="#" aria-label="Search" id="searchBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </a>
+      <a href="wishlist.html" aria-label="Wishlist">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </a>
+      <a href="cart.html" aria-label="Cart" class="nav-cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span class="cart-badge" style="display:none">0</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="search-panel" id="searchPanel">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search products..." autocomplete="off" />
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+  <main class="sketch-page">
+
+    <div class="sketch-inputs">
+      <div class="sketch-title-row">
+        <h1 class="sketch-title">Body Measurements</h1>
+        <select class="sketch-size-select" id="sizeSelect">
+          <option value="">Size</option>
+          <option value="XXS">XXS</option>
+          <option value="XS">XS</option>
+          <option value="S">S</option>
+          <option value="M">M</option>
+          <option value="L">L</option>
+          <option value="XL">XL</option>
+          <option value="ONE-SIZE">ONE-SIZE</option>
+        </select>
+      </div>
+      <p class="sketch-subtitle">Enter your measurements in cm</p>
+
+      <div class="sketch-field">
+        <label for="bust">Bust</label>
+        <div class="sketch-input-wrap">
+          <input type="number" id="bust" min="50" max="200" step="0.5" value="90" />
+          <span class="sketch-unit">cm</span>
+        </div>
+      </div>
+
+      <div class="sketch-field">
+        <label for="underbust">Underbust</label>
+        <div class="sketch-input-wrap">
+          <input type="number" id="underbust" min="40" max="180" step="0.5" value="74" />
+          <span class="sketch-unit">cm</span>
+        </div>
+      </div>
+
+      <div class="sketch-field">
+        <label for="waist">Waist</label>
+        <div class="sketch-input-wrap">
+          <input type="number" id="waist" min="40" max="180" step="0.5" value="68" />
+          <span class="sketch-unit">cm</span>
+        </div>
+      </div>
+
+      <div class="sketch-field">
+        <label for="hips">Hips</label>
+        <div class="sketch-input-wrap">
+          <input type="number" id="hips" min="50" max="200" step="0.5" value="95" />
+          <span class="sketch-unit">cm</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sketch-canvas">
+      <svg id="bodySvg" viewBox="0 0 300 560" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+  </main>
+
+  <script src="store.js"></script>
+  <script>
+    // ── Drawing constants ────────────────────────────────────────────
+    const CX          = 150;
+    const SCALE       = 3.5;
+
+    const NECK_HW     = 10;
+    const HEAD_Y      = 38;
+    const HEAD_R      = 22;
+    const NECK_TOP_Y  = 60;   // = HEAD_Y + HEAD_R
+    const SHOULDER_Y  = 92;
+    const ARMPIT_Y    = 122;
+    const BUST_Y      = 152;
+    const UNDERBUST_Y = 184;
+    const WAIST_Y     = 234;
+    const HIP_Y       = 294;
+    const CROTCH_Y    = 328;
+    const KNEE_Y      = 428;
+    const ANKLE_Y     = 510;
+
+    const TOE_EXT     = 12;   // how far toe extends beyond outer ankle
+    const FOOT_H      = 20;   // vertical height of foot
+    const ELBOW_Y     = 262;
+    const WRIST_Y     = 275;
+
+    // ── Helpers ──────────────────────────────────────────────────────
+    function hw(cm)          { return cm / (2 * Math.PI) * SCALE; }
+    function pt(xOff, y)     { return `${(CX + xOff).toFixed(1)},${y}`; }
+    function C(c1, c2, end)  { return `C ${c1} ${c2} ${end}`; }
+
+    // ── Main draw ────────────────────────────────────────────────────
+    function drawBody(bust, underbust, waist, hips) {
+      const bHW = hw(bust);
+      const uHW = hw(underbust);
+      const wHW = hw(waist);
+      const hHW = hw(hips);
+      const sHW = bHW * 0.97;     // shoulders ≈ bust (hips become widest point)
+      const aHW = bHW * 0.76;     // deep armhole — creates pronounced breast curve
+
+      // Leg geometry — slim and tapered
+      const lgap   = hHW * 0.20;
+      const lKnee  = hHW * 0.70;
+      const lAnkl  = hHW * 0.52;
+      const liKnee = lgap * 0.90;
+      const liAnkl = lgap * 0.86;
+
+      // ── Torso path ───────────────────────────────────────────────
+      const torso = [
+        `M ${pt(NECK_HW, NECK_TOP_Y)}`,
+
+        // right neck → right shoulder
+        C(pt(NECK_HW + 18, NECK_TOP_Y + 7),
+          pt(sHW + 2,       SHOULDER_Y - 6),
+          pt(sHW,           SHOULDER_Y)),
+
+        // right shoulder → right armpit (deep armhole slope)
+        C(pt(sHW + 2,  SHOULDER_Y + 22),
+          pt(aHW + 5,  ARMPIT_Y - 10),
+          pt(aHW,      ARMPIT_Y)),
+
+        // right armpit → right bust (dramatic outward — breast curve)
+        C(pt(aHW - 8,  ARMPIT_Y + 12),
+          pt(bHW + 12, BUST_Y - 6),
+          pt(bHW,      BUST_Y)),
+
+        // right bust → right underbust (taper)
+        C(pt(bHW + 3,  BUST_Y + 14),
+          pt(uHW + 3,  UNDERBUST_Y - 14),
+          pt(uHW,      UNDERBUST_Y)),
+
+        // right underbust → right waist (pronounced inward)
+        C(pt(uHW + 6,  UNDERBUST_Y + 22),
+          pt(wHW + 8,  WAIST_Y - 22),
+          pt(wHW,      WAIST_Y)),
+
+        // right waist → right hip (pronounced outward sweep)
+        C(pt(wHW + 8,  WAIST_Y + 26),
+          pt(hHW + 6,  HIP_Y - 26),
+          pt(hHW,      HIP_Y)),
+
+        // right hip → crotch (rounded lower hip)
+        C(pt(hHW + 4,  HIP_Y + 14),
+          pt(hHW + 2,  CROTCH_Y - 10),
+          pt(hHW,      CROTCH_Y)),
+
+        // across crotch bottom
+        `L ${pt(-hHW, CROTCH_Y)}`,
+
+        // ── Left side mirror, going UP ───────────────────────────
+
+        // left crotch → left hip (rounded lower hip)
+        C(pt(-hHW - 2, CROTCH_Y - 10),
+          pt(-hHW - 4, HIP_Y + 14),
+          pt(-hHW,     HIP_Y)),
+
+        C(pt(-hHW - 6, HIP_Y - 26),
+          pt(-wHW - 8, WAIST_Y + 26),
+          pt(-wHW,     WAIST_Y)),
+
+        C(pt(-wHW - 8, WAIST_Y - 22),
+          pt(-uHW - 6, UNDERBUST_Y + 22),
+          pt(-uHW,     UNDERBUST_Y)),
+
+        C(pt(-uHW - 3, UNDERBUST_Y - 14),
+          pt(-bHW - 3, BUST_Y + 14),
+          pt(-bHW,     BUST_Y)),
+
+        // left bust → left armpit (breast curve mirror)
+        C(pt(-bHW - 12, BUST_Y - 6),
+          pt(-aHW + 8,  ARMPIT_Y + 12),
+          pt(-aHW,      ARMPIT_Y)),
+
+        C(pt(-aHW - 5, ARMPIT_Y - 10),
+          pt(-sHW - 2, SHOULDER_Y + 22),
+          pt(-sHW,     SHOULDER_Y)),
+
+        C(pt(-sHW - 2,      SHOULDER_Y - 6),
+          pt(-NECK_HW - 18, NECK_TOP_Y + 7),
+          pt(-NECK_HW,      NECK_TOP_Y)),
+
+        'Z',
+      ].join(' ');
+
+      // ── Leg path (side = 1 for right, -1 for left) ───────────────
+      function legPath(s) {
+        return [
+          `M ${pt(s * hHW, CROTCH_Y)}`,
+
+          // outer: hip → knee (tapers in)
+          C(pt(s * hHW,   CROTCH_Y + 50),
+            pt(s * lKnee, KNEE_Y - 30),
+            pt(s * lKnee, KNEE_Y)),
+
+          // outer: knee → ankle (continues tapering)
+          C(pt(s * lKnee, KNEE_Y + 30),
+            pt(s * lAnkl, ANKLE_Y - 30),
+            pt(s * lAnkl, ANKLE_Y)),
+
+          // outer ankle → heel → toe (extends outward)
+          C(pt(s * (lAnkl + 2),           ANKLE_Y + 5),
+            pt(s * (lAnkl + TOE_EXT - 2), ANKLE_Y + FOOT_H - 5),
+            pt(s * (lAnkl + TOE_EXT),     ANKLE_Y + FOOT_H)),
+
+          // toe → inner toe (across ball of foot)
+          C(pt(s * (lAnkl + TOE_EXT + 2), ANKLE_Y + FOOT_H + 3),
+            pt(s * (liAnkl + 5),           ANKLE_Y + FOOT_H + 3),
+            pt(s * (liAnkl + 4),           ANKLE_Y + FOOT_H - 2)),
+
+          // inner toe → inner ankle
+          C(pt(s * (liAnkl + 4),  ANKLE_Y + 10),
+            pt(s * liAnkl,        ANKLE_Y + 4),
+            pt(s * liAnkl,        ANKLE_Y)),
+
+          // inner: ankle → knee
+          C(pt(s * liAnkl, ANKLE_Y - 20),
+            pt(s * liKnee, KNEE_Y + 20),
+            pt(s * liKnee, KNEE_Y)),
+
+          // inner: knee → crotch
+          C(pt(s * liKnee, KNEE_Y - 30),
+            pt(s * lgap,   CROTCH_Y + 30),
+            pt(s * lgap,   CROTCH_Y)),
+
+          'Z',
+        ].join(' ');
+      }
+
+      // ── Arm path (side = 1 for right, -1 for left) ───────────────
+      function armPath(s) {
+        const bow = 8;
+        return [
+          `M ${pt(s * (sHW + 5), SHOULDER_Y + 2)}`,
+
+          // outer: shoulder → elbow (bowing outward)
+          C(pt(s * (sHW + 8),       SHOULDER_Y + 50),
+            pt(s * (sHW + bow + 6), ELBOW_Y - 30),
+            pt(s * (sHW + bow + 5), ELBOW_Y)),
+
+          // outer: elbow → wrist
+          C(pt(s * (sHW + bow + 4), ELBOW_Y + 35),
+            pt(s * (sHW + 8),       WRIST_Y - 20),
+            pt(s * (sHW + 8),       WRIST_Y)),
+
+          // across wrist
+          `L ${pt(s * (sHW + 1), WRIST_Y)}`,
+
+          // inner: wrist → elbow
+          C(pt(s * (sHW + 1),       WRIST_Y - 20),
+            pt(s * (sHW + bow - 2), ELBOW_Y + 35),
+            pt(s * (sHW + bow - 3), ELBOW_Y)),
+
+          // inner: elbow → shoulder
+          C(pt(s * (sHW + bow - 3), ELBOW_Y - 30),
+            pt(s * (sHW + 2),       SHOULDER_Y + 50),
+            pt(s * (sHW - 1),       SHOULDER_Y + 2)),
+
+          'Z',
+        ].join(' ');
+      }
+
+      const fill   = '#fdf6f8';
+      const stroke = '#111111';
+      const sw     = '1.5';
+      const attr   = `fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"`;
+
+      document.getElementById('bodySvg').innerHTML = `
+        <path d="${armPath(-1)}" ${attr}/>
+        <path d="${armPath(1)}"  ${attr}/>
+        <path d="${torso}" ${attr}/>
+        <path d="${legPath(1)}"  ${attr}/>
+        <path d="${legPath(-1)}" ${attr}/>
+        <circle cx="${CX}" cy="${HEAD_Y}" r="${HEAD_R}" ${attr}/>
+      `;
+    }
+
+    // ── Reactive inputs ──────────────────────────────────────────────
+    function redraw() {
+      const bust      = parseFloat(document.getElementById('bust').value);
+      const underbust = parseFloat(document.getElementById('underbust').value);
+      const waist     = parseFloat(document.getElementById('waist').value);
+      const hips      = parseFloat(document.getElementById('hips').value);
+      if (bust > 0 && underbust > 0 && waist > 0 && hips > 0) {
+        drawBody(bust, underbust, waist, hips);
+      }
+    }
+
+    ['bust', 'underbust', 'waist', 'hips'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        document.getElementById('sizeSelect').value = '';
+        redraw();
+      });
+    });
+
+    // Mean values (midpoint of each range in the size guide table)
+    const SIZE_PRESETS = {
+      'XXS':      { bust: 80.5, underbust: 66.5, waist: 60,   hips: 87.5  },
+      'XS':       { bust: 84.5, underbust: 70.5, waist: 63.5, hips: 91.5  },
+      'S':        { bust: 88.5, underbust: 74.5, waist: 67.5, hips: 95.5  },
+      'M':        { bust: 92.5, underbust: 78.5, waist: 71.5, hips: 99.5  },
+      'L':        { bust: 96.5, underbust: 82.5, waist: 75.5, hips: 103.5 },
+      'XL':       { bust: 100.5,underbust: 86.5, waist: 79.5, hips: 107.5 },
+      'ONE-SIZE': { bust: 92.5,                  waist: 71.5, hips: 99.5  },
+    };
+
+    document.getElementById('sizeSelect').addEventListener('change', function () {
+      const preset = SIZE_PRESETS[this.value];
+      if (!preset) return;
+      if (preset.bust)       document.getElementById('bust').value      = preset.bust;
+      if (preset.underbust)  document.getElementById('underbust').value = preset.underbust;
+      if (preset.waist)      document.getElementById('waist').value     = preset.waist;
+      if (preset.hips)       document.getElementById('hips').value      = preset.hips;
+      redraw();
+    });
+
+    redraw();
+    Store.updateBadge();
+  </script>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <p class="footer-heading">Company</p>
+        <a href="#">About Us</a>
+        <a href="#">Contact</a>
+        <a href="#">Careers</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-heading">Shopping</p>
+        <a href="#">Delivery &amp; Shipping</a>
+        <a href="#">Returns &amp; Exchanges</a>
+        <a href="#">Size Guide</a>
+      </div>
+      <div class="footer-col">
+        <p class="footer-heading">Legal</p>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms &amp; Conditions</a>
+        <a href="#">Cookie Policy</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2025 MARTA. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script src="search.js"></script>
+</body>
+</html>

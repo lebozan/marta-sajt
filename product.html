@@ -216,6 +216,11 @@
         }
       }
 
+      const cfg = await Store.getConfig();
+      if (!cfg.paymentsEnabled) {
+        document.querySelector('.btn-cart').hidden = true;
+      }
+
       await Store.updateBadge();
       await syncWishlistBtn();
     }

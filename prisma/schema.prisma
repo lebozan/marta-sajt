@@ -45,6 +45,16 @@ model WishlistItem {
   @@unique([sessionId, productId, color, size])
 }
 
+model CarouselSlide {
+  id       Int    @id @default(autoincrement())
+  image    String
+  eyebrow  String @default("")
+  heading  String @default("")
+  ctaLabel String @default("Shop Now")
+  ctaLink  String @default("dresses.html")
+  position Int    @default(0)
+}
+
 model Order {
   id        String      @id @default(cuid())
   sessionId String

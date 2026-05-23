@@ -6,10 +6,11 @@ const cloudinary   = require('cloudinary').v2;
 const { PrismaClient } = require('@prisma/client');
 const { randomUUID }   = require('crypto');
 
-const app    = express();
-const prisma = new PrismaClient();
-const upload = multer({ storage: multer.memoryStorage() });
-const PORT   = process.env.PORT || 3000;
+const app              = express();
+const prisma           = new PrismaClient();
+const upload           = multer({ storage: multer.memoryStorage() });
+const PORT             = process.env.PORT || 3000;
+const PAYMENTS_ENABLED = process.env.ENABLE_PAYMENTS === 'true';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -52,6 +53,12 @@ app.post('/api/upload', upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const result = await streamToCloudinary(req.file.buffer);
   res.json({ url: result.secure_url, publicId: result.public_id });
+});
+
+// ── Config ──
+
+app.get('/api/config', (req, res) => {
+  res.json({ paymentsEnabled: PAYMENTS_ENABLED });
 });
 
 // ── Products ──
@@ -149,10 +156,12 @@ async function getPayPalToken() {
 }
 
 app.get('/api/checkout/config', (req, res) => {
+  if (!PAYMENTS_ENABLED) return res.status(503).json({ error: 'Payments disabled' });
   res.json({ clientId: process.env.PAYPAL_CLIENT_ID });
 });
 
 app.post('/api/checkout/create-order', async (req, res) => {
+  if (!PAYMENTS_ENABLED) return res.status(503).json({ error: 'Payments disabled' });
   const items = await prisma.cartItem.findMany({ where: { sessionId: req.sid } });
   if (items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
 
@@ -173,6 +182,7 @@ app.post('/api/checkout/create-order', async (req, res) => {
 });
 
 app.post('/api/checkout/capture-order', async (req, res) => {
+  if (!PAYMENTS_ENABLED) return res.status(503).json({ error: 'Payments disabled' });
   const { orderID } = req.body;
 
   let capture;
@@ -252,6 +262,46 @@ app.delete('/api/wishlist/:id', async (req, res) => {
   await prisma.wishlistItem.deleteMany({
     where: { id: parseInt(req.params.id), sessionId: req.sid },
   });
+  res.json({ ok: true });
+});
+
+// ── Carousel ──
+
+app.get('/api/carousel', async (req, res) => {
+  const slides = await prisma.carouselSlide.findMany({ orderBy: { position: 'asc' } });
+  res.json(slides);
+});
+
+app.post('/api/carousel', async (req, res) => {
+  const { image, eyebrow, heading, ctaLabel, ctaLink } = req.body;
+  if (!image) return res.status(400).json({ error: 'Image required' });
+  const last = await prisma.carouselSlide.findFirst({ orderBy: { position: 'desc' } });
+  const position = last ? last.position + 1 : 0;
+  const slide = await prisma.carouselSlide.create({
+    data: { image, eyebrow: eyebrow || '', heading: heading || '', ctaLabel: ctaLabel || 'Shop Now', ctaLink: ctaLink || 'dresses.html', position },
+  });
+  res.json(slide);
+});
+
+app.delete('/api/carousel/:id', async (req, res) => {
+  await prisma.carouselSlide.delete({ where: { id: parseInt(req.params.id) } });
+  res.json({ ok: true });
+});
+
+app.patch('/api/carousel/:id/move', async (req, res) => {
+  const { direction } = req.body;
+  const id = parseInt(req.params.id);
+  const slide = await prisma.carouselSlide.findUnique({ where: { id } });
+  if (!slide) return res.status(404).json({ error: 'Not found' });
+  const other = await prisma.carouselSlide.findFirst({
+    where: direction === 'up' ? { position: { lt: slide.position } } : { position: { gt: slide.position } },
+    orderBy: { position: direction === 'up' ? 'desc' : 'asc' },
+  });
+  if (!other) return res.json({ ok: true });
+  await prisma.$transaction([
+    prisma.carouselSlide.update({ where: { id: slide.id }, data: { position: other.position } }),
+    prisma.carouselSlide.update({ where: { id: other.id }, data: { position: slide.position } }),
+  ]);
   res.json({ ok: true });
 });
 

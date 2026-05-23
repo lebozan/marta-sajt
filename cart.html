@@ -88,6 +88,8 @@
 
     function fmt(n) { return '€' + n.toFixed(2); }
 
+    let paymentsEnabled = false;
+
     async function renderCart() {
       const cart = await Store.getCart();
 
@@ -127,7 +129,9 @@
       document.getElementById('summarySubtotal').textContent = fmt(subtotal);
       document.getElementById('summaryTotal').textContent = fmt(subtotal);
 
-      initPayPalButton();
+      if (paymentsEnabled) {
+        initPayPalButton();
+      }
     }
 
     cartItemsEl.addEventListener('click', async e => {
@@ -198,8 +202,20 @@
       };
     }
 
-    renderCart();
-    Store.updateBadge();
+    async function init() {
+      const cfg = await Store.getConfig();
+      paymentsEnabled = cfg.paymentsEnabled;
+
+      if (!paymentsEnabled) {
+        window.location.replace('index.html');
+        return;
+      }
+
+      await renderCart();
+      Store.updateBadge();
+    }
+
+    init();
   </script>
 
   <footer class="site-footer">
