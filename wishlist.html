@@ -46,6 +46,11 @@
 
   <main class="wishlist-page">
 
+    <div class="inquiry-sent" id="inquirySent" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c9607a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      <p>Your message has been sent. We'll be in touch soon.</p>
+    </div>
+
     <div class="empty-state" id="emptyState" hidden>
       <p class="empty-title">Your wishlist is empty</p>
       <a href="index.html" class="empty-cta">Browse Items</a>
@@ -53,25 +58,42 @@
 
     <div class="wishlist-grid" id="wishlistGrid"></div>
 
+    <div class="inquiry-section" id="inquirySection" hidden>
+      <h2 class="inquiry-title">Interested in these pieces?</h2>
+      <p class="inquiry-subtitle">Leave your email or Instagram and we'll reach out about the items in your wishlist.</p>
+      <div class="inquiry-form">
+        <input type="text" id="inquiryContact" class="inquiry-input" placeholder="Email or @instagram" autocomplete="off" />
+        <textarea id="inquiryMessage" class="inquiry-textarea" rows="3" placeholder="Any questions or notes (optional)"></textarea>
+        <button class="inquiry-btn" id="inquirySubmit">Send</button>
+      </div>
+      <p class="inquiry-feedback" id="inquiryFeedback" hidden></p>
+    </div>
+
   </main>
 
   <div id="toast" class="toast"></div>
 
   <script src="store.js"></script>
   <script>
-    const wishlistGridEl = document.getElementById('wishlistGrid');
-    const emptyStateEl   = document.getElementById('emptyState');
+    const wishlistGridEl   = document.getElementById('wishlistGrid');
+    const emptyStateEl     = document.getElementById('emptyState');
+    const inquirySectionEl = document.getElementById('inquirySection');
+    const inquirySentEl    = document.getElementById('inquirySent');
 
-    async function renderWishlist() {
+    async function renderWishlist(showSent = false) {
       const [list, cfg] = await Promise.all([Store.getWishlist(), Store.getConfig()]);
 
       if (list.length === 0) {
-        emptyStateEl.hidden = false;
+        emptyStateEl.hidden    = false;
         wishlistGridEl.innerHTML = '';
+        inquirySectionEl.hidden = true;
+        inquirySentEl.hidden    = !showSent;
         return;
       }
 
-      emptyStateEl.hidden = true;
+      emptyStateEl.hidden     = true;
+      inquirySectionEl.hidden = false;
+      inquirySentEl.hidden    = true;
       wishlistGridEl.innerHTML = list.map(item => `
         <article class="wishlist-card" data-item-id="${item.id}">
           <a href="product.html?id=${item.productId}" class="product-image-link">
@@ -116,6 +138,40 @@
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2000);
     }
+
+    document.getElementById('inquirySubmit').addEventListener('click', async () => {
+      const contact  = document.getElementById('inquiryContact').value.trim();
+      const message  = document.getElementById('inquiryMessage').value.trim();
+      const feedback = document.getElementById('inquiryFeedback');
+
+      if (!contact) {
+        feedback.textContent = 'Please enter your email or Instagram.';
+        feedback.className   = 'inquiry-feedback error';
+        feedback.hidden      = false;
+        return;
+      }
+
+      const r    = await fetch('/api/wishlist/inquiry', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ contact, message }),
+      });
+      const data = await r.json();
+
+      if (data.ok) {
+        feedback.textContent = "Thanks! We'll be in touch soon.";
+        feedback.className   = 'inquiry-feedback';
+        document.getElementById('inquiryContact').value = '';
+        document.getElementById('inquiryMessage').value = '';
+        await renderWishlist(true);
+        Store.updateBadge();
+        return;
+      } else {
+        feedback.textContent = 'Something went wrong. Please try again.';
+        feedback.className   = 'inquiry-feedback error';
+      }
+      feedback.hidden = false;
+    });
 
     renderWishlist();
     Store.updateBadge();

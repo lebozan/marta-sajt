@@ -56,6 +56,15 @@ model CarouselSlide {
   position Int    @default(0)
 }
 
+model WishlistInquiry {
+  id        Int      @id @default(autoincrement())
+  sessionId String
+  contact   String
+  message   String   @default("")
+  items     Json
+  createdAt DateTime @default(now())
+}
+
 model Order {
   id        String      @id @default(cuid())
   sessionId String

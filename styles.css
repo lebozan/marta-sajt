@@ -1261,6 +1261,117 @@ main {
   color: #c9607a;
 }
 
+/* ── Wishlist sent confirmation ── */
+
+.inquiry-sent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 400px;
+  margin: 0 auto 32px;
+  padding: 16px 20px;
+  border: 1px solid #f2d0d8;
+  background: #fdf6f8;
+}
+
+.inquiry-sent p {
+  font-size: 13px;
+  color: #111111;
+}
+
+/* ── Wishlist inquiry form ── */
+
+.inquiry-section {
+  max-width: 480px;
+  margin: 64px auto 0;
+  padding: 40px;
+  border: 1px solid #f2d0d8;
+  text-align: center;
+}
+
+.inquiry-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.inquiry-subtitle {
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.inquiry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inquiry-input {
+  height: 44px;
+  border: 1px solid #e5e5e5;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #111111;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.inquiry-input:focus {
+  border-color: #c9607a;
+}
+
+.inquiry-textarea {
+  border: 1px solid #e5e5e5;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #111111;
+  background: #ffffff;
+  outline: none;
+  resize: vertical;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.inquiry-textarea:focus {
+  border-color: #c9607a;
+}
+
+.inquiry-btn {
+  height: 44px;
+  background: #c9607a;
+  color: #ffffff;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.inquiry-btn:hover {
+  background: #a84f67;
+}
+
+.inquiry-feedback {
+  font-size: 12px;
+  color: #2a6a2a;
+  margin-top: 12px;
+}
+
+.inquiry-feedback.error {
+  color: #6a2a2a;
+}
+
 /* ── Body Sketch ── */
 
 .sketch-page {

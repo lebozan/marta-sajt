@@ -277,6 +277,22 @@ app.delete('/api/wishlist/:id', async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/wishlist/inquiry', async (req, res) => {
+  const { contact, message } = req.body;
+  if (!contact || !contact.trim()) return res.status(400).json({ error: 'Contact is required' });
+  const items = await prisma.wishlistItem.findMany({ where: { sessionId: req.sid } });
+  const inquiry = await prisma.wishlistInquiry.create({
+    data: { sessionId: req.sid, contact: contact.trim(), message: (message || '').trim(), items },
+  });
+  await prisma.wishlistItem.deleteMany({ where: { sessionId: req.sid } });
+  res.json({ ok: true, id: inquiry.id });
+});
+
+app.get('/api/wishlist/inquiries', async (req, res) => {
+  const inquiries = await prisma.wishlistInquiry.findMany({ orderBy: { createdAt: 'desc' } });
+  res.json(inquiries);
+});
+
 // ── Carousel ──
 
 app.get('/api/carousel', async (req, res) => {

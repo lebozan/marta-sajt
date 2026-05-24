@@ -196,6 +196,14 @@
     .img-item { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid #e5e5e5; }
     .img-item img { width: 52px; height: 65px; object-fit: cover; flex-shrink: 0; }
     .img-item-label { font-size: 11px; color: #888; flex: 1; }
+
+    .inquiry-row { padding: 14px; border: 1px solid #e5e5e5; margin-bottom: 8px; }
+    .inquiry-row-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+    .inquiry-contact { font-size: 13px; font-weight: 500; }
+    .inquiry-date { font-size: 11px; color: #aaa; }
+    .inquiry-message { font-size: 12px; color: #444; margin-bottom: 8px; white-space: pre-wrap; }
+    .inquiry-items { display: flex; flex-wrap: wrap; gap: 6px; }
+    .inquiry-item-chip { font-size: 11px; background: #fdf6f8; border: 1px solid #f2d0d8; padding: 3px 8px; color: #666; }
   </style>
 </head>
 <body>
@@ -276,6 +284,14 @@
       </div>
       <button class="btn" id="saveEditBtn">Save Changes</button>
       <div class="status" id="editStatus"></div>
+    </div>
+
+    <!-- Wishlist inquiries -->
+    <div class="card">
+      <h2>Wishlist Inquiries</h2>
+      <div id="inquiryList">
+        <p style="font-size:13px;color:#888;">Loading...</p>
+      </div>
     </div>
 
     <!-- Carousel slides -->
@@ -658,6 +674,34 @@
     });
 
     loadSlides();
+
+    // ── Wishlist inquiries ──
+
+    async function loadInquiries() {
+      const inquiries = await fetch('/api/wishlist/inquiries').then(r => r.json());
+      const list = document.getElementById('inquiryList');
+      if (!inquiries.length) {
+        list.innerHTML = '<p style="font-size:13px;color:#888;">No inquiries yet.</p>';
+        return;
+      }
+      list.innerHTML = inquiries.map(inq => {
+        const items = Array.isArray(inq.items) ? inq.items : [];
+        const chips = items.map(it => `<span class="inquiry-item-chip">${it.name} · ${it.color} · ${it.size}</span>`).join('');
+        const date  = new Date(inq.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `
+          <div class="inquiry-row">
+            <div class="inquiry-row-header">
+              <span class="inquiry-contact">${inq.contact}</span>
+              <span class="inquiry-date">${date}</span>
+            </div>
+            ${inq.message ? `<p class="inquiry-message">${inq.message}</p>` : ''}
+            <div class="inquiry-items">${chips || '<span style="font-size:11px;color:#aaa;">No items at time of submission</span>'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    loadInquiries();
   </script>
 
 </body>
