@@ -397,6 +397,31 @@ body {
   grid-template-columns: repeat(4, 1fr);
 }
 
+/* ── Breadcrumb ── */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+  font-size: 12px;
+  color: #aaa;
+  letter-spacing: 0.03em;
+}
+
+.breadcrumb a {
+  color: #aaa;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: #111;
+}
+
+.breadcrumb span:last-child {
+  color: #111;
+}
+
 /* ── Product Grid ── */
 
 main {
@@ -500,7 +525,16 @@ main {
   font-size: 16px;
   font-weight: 400;
   color: #444444;
-  margin-bottom: 36px;
+  margin-bottom: 20px;
+}
+
+.panel-description {
+  font-size: 13px;
+  font-weight: 300;
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 32px;
+  white-space: pre-wrap;
 }
 
 .panel-section {

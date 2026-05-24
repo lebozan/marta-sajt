@@ -161,6 +161,8 @@
     .product-row-name { font-size: 13px; font-weight: 500; }
     .product-row-price { font-size: 12px; color: #666; margin-top: 2px; }
     .product-row-id { font-size: 11px; color: #aaa; margin-top: 2px; font-family: monospace; }
+    .product-row.inactive { opacity: 0.5; }
+    .badge-inactive { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #c9607a; background: #fdf6f8; border: 1px solid #f2d0d8; padding: 2px 7px; margin-left: 6px; vertical-align: middle; }
 
     textarea {
       border: 1px solid #e5e5e5;
@@ -230,6 +232,10 @@
         </select>
       </div>
       <div class="field">
+        <label>Description</label>
+        <textarea id="productDescription" rows="4" placeholder="Optional product description..."></textarea>
+      </div>
+      <div class="field">
         <label>Images <span style="font-weight:400;color:#aaa">(first = primary)</span></label>
         <div class="image-list" id="productImageList"></div>
         <div style="display:flex;gap:8px;">
@@ -273,6 +279,10 @@
         </select>
       </div>
       <div class="field">
+        <label>Description</label>
+        <textarea id="editDescription" rows="4" placeholder="Optional product description..."></textarea>
+      </div>
+      <div class="field">
         <label>Images <span style="font-weight:400;color:#aaa">(first = primary)</span></label>
         <div class="image-list" id="editImageList"></div>
         <div style="display:flex;gap:8px;">
@@ -281,6 +291,10 @@
           <input type="text" id="editImageUrl" placeholder="or paste URL" style="flex:1;" />
           <button class="btn btn-outline" id="editAddUrlBtn">Add</button>
         </div>
+      </div>
+      <div class="field" style="flex-direction:row;align-items:center;gap:10px;">
+        <input type="checkbox" id="editActive" style="width:16px;height:16px;cursor:pointer;" />
+        <label for="editActive" style="text-transform:uppercase;letter-spacing:0.08em;font-size:11px;font-weight:500;color:#666;cursor:pointer;">Visible on site</label>
       </div>
       <button class="btn" id="saveEditBtn">Save Changes</button>
       <div class="status" id="editStatus"></div>
@@ -399,9 +413,10 @@
 
     // Create product
     createBtn.addEventListener('click', async () => {
-      const name  = document.getElementById('productName').value.trim();
-      const price = parseFloat(document.getElementById('productPrice').value);
-      const type  = document.getElementById('productType').value;
+      const name        = document.getElementById('productName').value.trim();
+      const price       = parseFloat(document.getElementById('productPrice').value);
+      const type        = document.getElementById('productType').value;
+      const description = document.getElementById('productDescription').value.trim();
 
       if (!name || !price || !productImages.length) {
         return showStatus(createStatus, 'Fill in all fields and add at least one image.', true);
@@ -410,7 +425,7 @@
       const r    = await fetch('/api/products', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, price, images: productImages, type }),
+        body:    JSON.stringify({ name, price, images: productImages, type, description }),
       });
       const data = await r.json();
 
@@ -420,6 +435,7 @@
         document.getElementById('productPrice').value = '';
         productImages = [];
         renderProductImages();
+        document.getElementById('productDescription').value = '';
         loadProducts();
       } else {
         showStatus(createStatus, 'Error: ' + JSON.stringify(data), true);
@@ -430,7 +446,7 @@
     let cachedProducts = [];
 
     async function loadProducts() {
-      cachedProducts = await fetch('/api/products').then(r => r.json());
+      cachedProducts = await fetch('/api/products?all=true').then(r => r.json());
 
       if (!cachedProducts.length) {
         productList.innerHTML = '<p style="font-size:13px;color:#888;">No products yet.</p>';
@@ -438,14 +454,15 @@
       }
 
       productList.innerHTML = cachedProducts.map(p => `
-        <div class="product-row" data-id="${p.id}">
+        <div class="product-row${p.active ? '' : ' inactive'}" data-id="${p.id}">
           <img src="${p.image}" alt="${p.name}" />
           <div class="product-row-info">
-            <div class="product-row-name">${p.name}</div>
+            <div class="product-row-name">${p.name}${p.active ? '' : '<span class="badge-inactive">Hidden</span>'}</div>
             <div class="product-row-price">€${p.price.toFixed(2)} · ${p.type}${p.images && p.images.length > 1 ? ` · ${p.images.length} images` : ''}</div>
             <div class="product-row-id">${p.id}</div>
           </div>
           <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline toggle-active-btn">${p.active ? 'Hide' : 'Show'}</button>
             <button class="btn btn-outline edit-btn">Edit</button>
             <button class="btn btn-outline delete-btn">Delete</button>
           </div>
@@ -456,12 +473,19 @@
     productList.addEventListener('click', async e => {
       const row = e.target.closest('.product-row');
       if (!row) return;
+      const product = cachedProducts.find(p => p.id === row.dataset.id);
       if (e.target.classList.contains('delete-btn')) {
         if (!confirm('Delete this product?')) return;
         await fetch(`/api/products/${row.dataset.id}`, { method: 'DELETE' });
         loadProducts();
+      } else if (e.target.classList.contains('toggle-active-btn')) {
+        await fetch(`/api/products/${row.dataset.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: !product.active }),
+        });
+        loadProducts();
       } else if (e.target.classList.contains('edit-btn')) {
-        const product = cachedProducts.find(p => p.id === row.dataset.id);
         if (product) openEdit(product);
       }
     });
@@ -489,9 +513,11 @@
     function openEdit(product) {
       editingId   = product.id;
       editImages  = product.images && product.images.length ? [...product.images] : [product.image];
-      document.getElementById('editName').value  = product.name;
-      document.getElementById('editPrice').value = product.price;
-      document.getElementById('editType').value  = product.type;
+      document.getElementById('editName').value        = product.name;
+      document.getElementById('editPrice').value       = product.price;
+      document.getElementById('editType').value        = product.type;
+      document.getElementById('editDescription').value = product.description || '';
+      document.getElementById('editActive').checked    = product.active;
       document.getElementById('editStatus').style.display = 'none';
       renderEditImages();
       const card = document.getElementById('editCard');
@@ -543,10 +569,12 @@
     });
 
     document.getElementById('saveEditBtn').addEventListener('click', async () => {
-      const name   = document.getElementById('editName').value.trim();
-      const price  = parseFloat(document.getElementById('editPrice').value);
-      const type   = document.getElementById('editType').value;
-      const status = document.getElementById('editStatus');
+      const name        = document.getElementById('editName').value.trim();
+      const price       = parseFloat(document.getElementById('editPrice').value);
+      const type        = document.getElementById('editType').value;
+      const description = document.getElementById('editDescription').value.trim();
+      const active      = document.getElementById('editActive').checked;
+      const status      = document.getElementById('editStatus');
 
       if (!name || !price || !editImages.length) {
         return showStatus(status, 'Fill in all fields and keep at least one image.', true);
@@ -555,7 +583,7 @@
       const r = await fetch(`/api/products/${editingId}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, price, images: editImages, type }),
+        body:    JSON.stringify({ name, price, images: editImages, type, description, active }),
       });
       const data = await r.json();
 

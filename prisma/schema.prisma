@@ -8,13 +8,16 @@ datasource db {
 }
 
 model Product {
-  id        String   @id @default(cuid())
-  name      String
-  price     Float
-  image     String
-  images    String[]
-  type      String   @default("dress")
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  price       Float
+  image       String
+  images      String[]
+  type        String   @default("dress")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model CartItem {
@@ -47,13 +50,14 @@ model WishlistItem {
 }
 
 model CarouselSlide {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   image    String
-  eyebrow  String @default("")
-  heading  String @default("")
-  ctaLabel String @default("Shop Now")
-  ctaLink  String @default("dresses.html")
-  position Int    @default(0)
+  eyebrow  String  @default("")
+  heading  String  @default("")
+  ctaLabel String  @default("Shop Now")
+  ctaLink  String  @default("dresses.html")
+  position Int     @default(0)
+  active   Boolean @default(true)
 }
 
 model WishlistInquiry {

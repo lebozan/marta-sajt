@@ -64,7 +64,10 @@ app.get('/api/config', (req, res) => {
 // ── Products ──
 
 app.get('/api/products', async (req, res) => {
-  const where = req.query.type ? { type: req.query.type } : {};
+  const where = {
+    ...(req.query.all !== 'true' && { active: true }),
+    ...(req.query.type ? { type: req.query.type } : {}),
+  };
   const products = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } });
   res.json(products);
 });
@@ -73,7 +76,7 @@ app.get('/api/products/search', async (req, res) => {
   const q = (req.query.q || '').trim();
   if (!q) return res.json([]);
   const products = await prisma.product.findMany({
-    where: { name: { contains: q, mode: 'insensitive' } },
+    where: { active: true, name: { contains: q, mode: 'insensitive' } },
     take: 3,
     orderBy: { createdAt: 'desc' },
   });
@@ -87,19 +90,21 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-  const { name, price, images = [], type = 'dress' } = req.body;
+  const { name, price, images = [], type = 'dress', description = '' } = req.body;
   if (!images.length) return res.status(400).json({ error: 'At least one image required' });
-  const product = await prisma.product.create({ data: { name, price, image: images[0], images, type } });
+  const product = await prisma.product.create({ data: { name, price, image: images[0], images, type, description } });
   res.json(product);
 });
 
 app.patch('/api/products/:id', async (req, res) => {
-  const { name, price, images, type } = req.body;
+  const { name, price, images, type, active, description } = req.body;
   const data = {};
-  if (name    !== undefined) data.name  = name;
-  if (price   !== undefined) data.price = price;
-  if (type    !== undefined) data.type  = type;
-  if (images  !== undefined) { data.images = images; data.image = images[0] ?? ''; }
+  if (name        !== undefined) data.name        = name;
+  if (price       !== undefined) data.price       = price;
+  if (type        !== undefined) data.type        = type;
+  if (active      !== undefined) data.active      = active;
+  if (description !== undefined) data.description = description;
+  if (images      !== undefined) { data.images = images; data.image = images[0] ?? ''; }
   const product = await prisma.product.update({ where: { id: req.params.id }, data });
   res.json(product);
 });
@@ -296,7 +301,7 @@ app.get('/api/wishlist/inquiries', async (req, res) => {
 // ── Carousel ──
 
 app.get('/api/carousel', async (req, res) => {
-  const slides = await prisma.carouselSlide.findMany({ orderBy: { position: 'asc' } });
+  const slides = await prisma.carouselSlide.findMany({ where: { active: true }, orderBy: { position: 'asc' } });
   res.json(slides);
 });
 
