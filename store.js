@@ -69,9 +69,9 @@ const Store = {
     const cfg = await this.getConfig();
     if (!cfg.paymentsEnabled) {
       document.body.classList.add('payments-off');
-      document.querySelectorAll('.nav-cart').forEach(el => { el.hidden = true; });
       return;
     }
+    document.querySelectorAll('.nav-cart').forEach(el => { el.hidden = false; });
     const cart  = await this.getCart();
     const count = cart.reduce((n, i) => n + i.quantity, 0);
     document.querySelectorAll('.cart-badge').forEach(el => {
