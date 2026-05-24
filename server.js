@@ -301,7 +301,8 @@ app.get('/api/wishlist/inquiries', async (req, res) => {
 // ── Carousel ──
 
 app.get('/api/carousel', async (req, res) => {
-  const slides = await prisma.carouselSlide.findMany({ where: { active: true }, orderBy: { position: 'asc' } });
+  const where = req.query.all === 'true' ? {} : { active: true };
+  const slides = await prisma.carouselSlide.findMany({ where, orderBy: { position: 'asc' } });
   res.json(slides);
 });
 
@@ -312,6 +313,15 @@ app.post('/api/carousel', async (req, res) => {
   const position = last ? last.position + 1 : 0;
   const slide = await prisma.carouselSlide.create({
     data: { image, eyebrow: eyebrow || '', heading: heading || '', ctaLabel: ctaLabel || 'Shop Now', ctaLink: ctaLink || 'dresses.html', position },
+  });
+  res.json(slide);
+});
+
+app.patch('/api/carousel/:id', async (req, res) => {
+  const { active } = req.body;
+  const slide = await prisma.carouselSlide.update({
+    where: { id: parseInt(req.params.id) },
+    data: { active },
   });
   res.json(slide);
 });

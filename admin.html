@@ -193,6 +193,7 @@
     .slide-row-heading { font-size: 13px; font-weight: 500; margin-top: 2px; }
     .slide-row-cta { font-size: 11px; color: #888; margin-top: 2px; }
     .slide-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .slide-row.inactive { opacity: 0.5; }
 
     .image-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
     .img-item { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid #e5e5e5; }
@@ -609,14 +610,14 @@
     // ── Carousel slides ──
 
     async function loadSlides() {
-      const slides = await fetch('/api/carousel').then(r => r.json());
+      const slides = await fetch('/api/carousel?all=true').then(r => r.json());
       const list = document.getElementById('slideList');
       if (!slides.length) {
         list.innerHTML = '<p style="font-size:13px;color:#888;">No slides yet.</p>';
         return;
       }
       list.innerHTML = slides.map(s => `
-        <div class="slide-row" data-id="${s.id}">
+        <div class="slide-row${s.active ? '' : ' inactive'}" data-id="${s.id}" data-active="${s.active}">
           <img src="${s.image}" alt="${s.eyebrow}" />
           <div class="slide-row-info">
             <div class="slide-row-eyebrow">${s.eyebrow}</div>
@@ -626,6 +627,7 @@
           <div class="slide-row-actions">
             <button class="btn btn-outline move-up-btn" title="Move up">↑</button>
             <button class="btn btn-outline move-down-btn" title="Move down">↓</button>
+            <button class="btn btn-outline toggle-slide-btn">${s.active ? 'Hide' : 'Show'}</button>
             <button class="btn btn-outline delete-slide-btn">Delete</button>
           </div>
         </div>
@@ -639,6 +641,14 @@
       if (e.target.classList.contains('delete-slide-btn')) {
         if (!confirm('Delete this slide?')) return;
         await fetch(`/api/carousel/${id}`, { method: 'DELETE' });
+        loadSlides();
+      } else if (e.target.classList.contains('toggle-slide-btn')) {
+        const active = row.dataset.active === 'true';
+        await fetch(`/api/carousel/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ active: !active }),
+        });
         loadSlides();
       } else if (e.target.classList.contains('move-up-btn')) {
         await fetch(`/api/carousel/${id}/move`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ direction: 'up' }) });
