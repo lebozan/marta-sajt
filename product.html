@@ -83,7 +83,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
-          Add to Wishlist
+          <span class="btn-wishlist-label">Add to Wishlist</span>
         </button>
       </div>
     </aside>
@@ -198,7 +198,8 @@
     let selectedColor = 'Sand';
     let selectedSize  = 'S';
 
-    const wishlistBtn = document.querySelector('.btn-wishlist');
+    const wishlistBtn   = document.querySelector('.btn-wishlist');
+    const wishlistLabel = wishlistBtn.querySelector('.btn-wishlist-label');
 
     let PRODUCT = null;
 
@@ -235,6 +236,7 @@
       if (!PRODUCT) return;
       const item = await Store.findInWishlist(PRODUCT.id, selectedColor, selectedSize);
       wishlistBtn.classList.toggle('in-wishlist', !!item);
+      wishlistLabel.textContent = item ? 'In Wishlist' : 'Add to Wishlist';
     }
 
     document.querySelectorAll('.color-swatch').forEach(swatch => {
@@ -268,10 +270,12 @@
       if (existing) {
         await Store.removeFromWishlist(existing.id);
         wishlistBtn.classList.remove('in-wishlist');
+        wishlistLabel.textContent = 'Add to Wishlist';
         showToast('Removed from wishlist');
       } else {
         await Store.addToWishlist({ ...PRODUCT, color: selectedColor, size: selectedSize });
         wishlistBtn.classList.add('in-wishlist');
+        wishlistLabel.textContent = 'In Wishlist';
         showToast('Added to wishlist');
       }
     });
