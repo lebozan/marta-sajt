@@ -1,6 +1,7 @@
 const express      = require('express');
 const cookieParser = require('cookie-parser');
 const path         = require('path');
+const fs           = require('fs');
 const multer       = require('multer');
 const cloudinary   = require('cloudinary').v2;
 const { PrismaClient } = require('@prisma/client');
@@ -12,6 +13,8 @@ const upload           = multer({ storage: multer.memoryStorage() });
 const PORT             = process.env.PORT || 3000;
 const PAYMENTS_ENABLED = process.env.ENABLE_PAYMENTS === 'true';
 const ADMIN_PASSWORD   = process.env.ADMIN_PASSWORD || '';
+const SITE_URL         = (process.env.SITE_URL || 'https://zirafiona.up.railway.app').replace(/\/$/, '');
+const OG_IMAGE         = 'https://res.cloudinary.com/dkcha41gs/image/upload/v1777981668/marta/ugkc4goltm8lwr2ca2iz.png';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -393,6 +396,113 @@ app.patch('/api/carousel/:id/move', requireAdmin, async (req, res) => {
     prisma.carouselSlide.update({ where: { id: other.id }, data: { position: slide.position } }),
   ]);
   res.json({ ok: true });
+});
+
+// ── SEO ──
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function buildMeta({ title, desc, url, image, type = 'website', jsonLd = null }) {
+  const t = escapeHtml(title), d = escapeHtml(desc), u = escapeHtml(url), i = escapeHtml(image);
+  let out = `<title>${t}</title>
+  <meta name="description" content="${d}" />
+  <link rel="canonical" href="${u}" />
+  <meta property="og:type" content="${type}" />
+  <meta property="og:site_name" content="MARTA" />
+  <meta property="og:title" content="${t}" />
+  <meta property="og:description" content="${d}" />
+  <meta property="og:url" content="${u}" />
+  <meta property="og:image" content="${i}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${t}" />
+  <meta name="twitter:description" content="${d}" />
+  <meta name="twitter:image" content="${i}" />`;
+  if (jsonLd) {
+    // Escape `<` so a stray `</script>` in the data can't break out of the tag.
+    const json = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
+    out += `\n  <script type="application/ld+json">${json}</script>`;
+  }
+  return out;
+}
+
+// Per-product SEO: inject real title/description/OG image/JSON-LD so crawlers
+// and social previews see product data rather than the static template.
+app.get('/product.html', async (req, res, next) => {
+  try {
+    const html = fs.readFileSync(path.join(__dirname, 'product.html'), 'utf8');
+    let meta;
+    const id = req.query.id;
+    if (id) {
+      const p = await prisma.product.findUnique({ where: { id: String(id) } });
+      if (p) {
+        const url   = `${SITE_URL}/product.html?id=${encodeURIComponent(p.id)}`;
+        const desc  = (p.description || `${p.name} — available now at MARTA.`).slice(0, 160);
+        const image = p.image || OG_IMAGE;
+        meta = buildMeta({
+          title: `${p.name} — MARTA`, desc, url, image, type: 'product',
+          jsonLd: {
+            '@context': 'https://schema.org/',
+            '@type': 'Product',
+            name: p.name,
+            image: (p.images && p.images.length) ? p.images : [p.image],
+            description: p.description || '',
+            brand: { '@type': 'Brand', name: 'MARTA' },
+            offers: {
+              '@type': 'Offer',
+              price: p.price.toFixed(2),
+              priceCurrency: 'EUR',
+              availability: p.active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+              url,
+            },
+          },
+        });
+      }
+    }
+    if (!meta) {
+      meta = buildMeta({
+        title: 'MARTA', desc: 'Shop MARTA — elegant, curated women’s fashion.',
+        url: `${SITE_URL}/product.html`, image: OG_IMAGE,
+      });
+    }
+    res.type('html').send(html.replace('<!--SEO-->', meta));
+  } catch (err) { next(err); }
+});
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(
+`User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /cart.html
+Disallow: /wishlist.html
+Disallow: /api/
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`);
+});
+
+app.get('/sitemap.xml', async (req, res, next) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { active: true },
+      select: { id: true, updatedAt: true },
+    });
+    const staticPaths = ['/', '/dresses.html', '/miraz.html'];
+    const urls = [
+      ...staticPaths.map(p => `  <url><loc>${SITE_URL}${p}</loc></url>`),
+      ...products.map(p =>
+        `  <url><loc>${SITE_URL}/product.html?id=${encodeURIComponent(p.id)}</loc><lastmod>${p.updatedAt.toISOString()}</lastmod></url>`),
+    ];
+    res.type('application/xml').send(
+`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join('\n')}
+</urlset>`);
+  } catch (err) { next(err); }
 });
 
 app.use(express.static(path.join(__dirname)));

@@ -37,6 +37,12 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 - `PATCH /api/carousel/:id/move` — reorder slides by swapping `position` values
 - `POST /api/checkout/create-order` / `capture-order` — PayPal payment flow; both guarded by `PAYMENTS_ENABLED`
 
+**SEO:**
+- Static pages (`index`, `dresses`, `miraz`) have hardcoded meta description + Open Graph + Twitter tags + `<link rel="canonical">`. Base URL is `SITE_URL` (defaults to the Railway URL).
+- `cart.html` / `wishlist.html` carry `<meta name="robots" content="noindex, follow">`; `admin.html` is `noindex, nofollow`.
+- `GET /product.html` is intercepted server-side (before `express.static`): it reads the file and replaces the `<!--SEO-->` placeholder in the `<head>` with a per-product `<title>`, description, OG image, and `Product` JSON-LD (falls back to generic MARTA meta when `?id=` is missing/not found). `buildMeta()` + `escapeHtml()` build the block; JSON-LD escapes `<` to prevent tag breakout.
+- `GET /sitemap.xml` — generated from `SITE_URL` + all active products (with `lastmod`). `GET /robots.txt` — references the sitemap and disallows admin/cart/wishlist/api.
+
 ### Database (Prisma + PostgreSQL)
 Schema at `prisma/schema.prisma`. After any schema change, run `npm run db:push`.
 
@@ -75,4 +81,5 @@ PAYPAL_CLIENT_SECRET
 PAYPAL_ENV                      # "sandbox" or "live"
 ENABLE_PAYMENTS                 # Set to "true" to show cart and enable checkout
 ADMIN_PASSWORD                  # Shared password for the admin panel; if unset, admin routes return 503
+SITE_URL                        # Canonical base URL for SEO tags/sitemap (defaults to the Railway URL)
 ```
