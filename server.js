@@ -87,6 +87,18 @@ app.get('/api/admin/status', (req, res) => {
   res.json({ authenticated: isAdmin(req), configured: !!ADMIN_PASSWORD });
 });
 
+// ── Validation helpers ──
+
+const LIMITS = { name: 200, description: 5000, url: 2000, text: 300, message: 3000, images: 20 };
+
+const isStr       = v => typeof v === 'string';
+const nonEmpty    = v => isStr(v) && v.trim().length > 0;
+const validType   = v => v === 'dress' || v === 'miraz';
+const validPrice  = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1_000_000;
+const validImages = v => Array.isArray(v) && v.length > 0 && v.length <= LIMITS.images
+  && v.every(u => nonEmpty(u) && u.length <= LIMITS.url);
+const intParam    = v => { const n = parseInt(v, 10); return Number.isInteger(n) ? n : null; };
+
 // ── Images ──
 
 function streamToCloudinary(buffer) {
@@ -141,20 +153,44 @@ app.get('/api/products/:id', async (req, res) => {
 
 app.post('/api/products', requireAdmin, async (req, res) => {
   const { name, price, images = [], type = 'dress', description = '' } = req.body;
-  if (!images.length) return res.status(400).json({ error: 'At least one image required' });
-  const product = await prisma.product.create({ data: { name, price, image: images[0], images, type, description } });
+  if (!nonEmpty(name) || name.length > LIMITS.name) return res.status(400).json({ error: 'Name is required (max 200 chars)' });
+  if (!validPrice(price))                           return res.status(400).json({ error: 'Price must be a number between 0 and 1,000,000' });
+  if (!validType(type))                             return res.status(400).json({ error: 'Type must be "dress" or "miraz"' });
+  if (!isStr(description) || description.length > LIMITS.description) return res.status(400).json({ error: 'Description too long' });
+  if (!validImages(images))                         return res.status(400).json({ error: 'At least one valid image required' });
+  const product = await prisma.product.create({
+    data: { name: name.trim(), price, image: images[0], images, type, description: description.trim() },
+  });
   res.json(product);
 });
 
 app.patch('/api/products/:id', requireAdmin, async (req, res) => {
   const { name, price, images, type, active, description } = req.body;
   const data = {};
-  if (name        !== undefined) data.name        = name;
-  if (price       !== undefined) data.price       = price;
-  if (type        !== undefined) data.type        = type;
-  if (active      !== undefined) data.active      = active;
-  if (description !== undefined) data.description = description;
-  if (images      !== undefined) { data.images = images; data.image = images[0] ?? ''; }
+  if (name !== undefined) {
+    if (!nonEmpty(name) || name.length > LIMITS.name) return res.status(400).json({ error: 'Invalid name' });
+    data.name = name.trim();
+  }
+  if (price !== undefined) {
+    if (!validPrice(price)) return res.status(400).json({ error: 'Invalid price' });
+    data.price = price;
+  }
+  if (type !== undefined) {
+    if (!validType(type)) return res.status(400).json({ error: 'Invalid type' });
+    data.type = type;
+  }
+  if (active !== undefined) {
+    if (typeof active !== 'boolean') return res.status(400).json({ error: 'Invalid active flag' });
+    data.active = active;
+  }
+  if (description !== undefined) {
+    if (!isStr(description) || description.length > LIMITS.description) return res.status(400).json({ error: 'Invalid description' });
+    data.description = description.trim();
+  }
+  if (images !== undefined) {
+    if (!validImages(images)) return res.status(400).json({ error: 'At least one valid image required' });
+    data.images = images; data.image = images[0];
+  }
   const product = await prisma.product.update({ where: { id: req.params.id }, data });
   res.json(product);
 });
@@ -172,19 +208,28 @@ app.get('/api/cart', async (req, res) => {
 });
 
 app.post('/api/cart', async (req, res) => {
-  const { id, name, price, image, color, size } = req.body;
+  const { id, color, size } = req.body;
+  if (!nonEmpty(id))                                return res.status(400).json({ error: 'Product id required' });
+  if (!nonEmpty(color) || color.length > LIMITS.text) return res.status(400).json({ error: 'Invalid color' });
+  if (!nonEmpty(size)  || size.length  > LIMITS.text) return res.status(400).json({ error: 'Invalid size' });
+  // Snapshot name/price/image from the DB, never from the client — prevents price tampering.
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) return res.status(404).json({ error: 'Product not found' });
   const item = await prisma.cartItem.upsert({
-    where:  { sessionId_productId_color_size: { sessionId: req.sid, productId: id, color, size } },
+    where:  { sessionId_productId_color_size: { sessionId: req.sid, productId: product.id, color, size } },
     update: { quantity: { increment: 1 } },
-    create: { sessionId: req.sid, productId: id, name, price, image, color, size },
+    create: { sessionId: req.sid, productId: product.id, name: product.name, price: product.price, image: product.image, color, size },
   });
   res.json(item);
 });
 
 app.patch('/api/cart/:id', async (req, res) => {
+  const id = intParam(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'Invalid id' });
   const { delta } = req.body;
+  if (delta !== 1 && delta !== -1) return res.status(400).json({ error: 'Delta must be 1 or -1' });
   const existing = await prisma.cartItem.findFirst({
-    where: { id: parseInt(req.params.id), sessionId: req.sid },
+    where: { id, sessionId: req.sid },
   });
   if (!existing) return res.status(404).json({ error: 'Not found' });
   const item = await prisma.cartItem.update({
@@ -195,8 +240,10 @@ app.patch('/api/cart/:id', async (req, res) => {
 });
 
 app.delete('/api/cart/:id', async (req, res) => {
+  const id = intParam(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'Invalid id' });
   await prisma.cartItem.deleteMany({
-    where: { id: parseInt(req.params.id), sessionId: req.sid },
+    where: { id, sessionId: req.sid },
   });
   res.json({ ok: true });
 });
@@ -314,27 +361,35 @@ app.get('/api/wishlist', async (req, res) => {
 });
 
 app.post('/api/wishlist', async (req, res) => {
-  const { id, name, price, image, color, size } = req.body;
+  const { id, color, size } = req.body;
+  if (!nonEmpty(id))                                  return res.status(400).json({ error: 'Product id required' });
+  if (!nonEmpty(color) || color.length > LIMITS.text) return res.status(400).json({ error: 'Invalid color' });
+  if (!nonEmpty(size)  || size.length  > LIMITS.text) return res.status(400).json({ error: 'Invalid size' });
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) return res.status(404).json({ error: 'Product not found' });
   const existing = await prisma.wishlistItem.findFirst({
-    where: { sessionId: req.sid, productId: id, color, size },
+    where: { sessionId: req.sid, productId: product.id, color, size },
   });
   if (existing) return res.json({ added: false });
   const item = await prisma.wishlistItem.create({
-    data: { sessionId: req.sid, productId: id, name, price, image, color, size },
+    data: { sessionId: req.sid, productId: product.id, name: product.name, price: product.price, image: product.image, color, size },
   });
   res.json({ added: true, item });
 });
 
 app.delete('/api/wishlist/:id', async (req, res) => {
+  const id = intParam(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'Invalid id' });
   await prisma.wishlistItem.deleteMany({
-    where: { id: parseInt(req.params.id), sessionId: req.sid },
+    where: { id, sessionId: req.sid },
   });
   res.json({ ok: true });
 });
 
 app.post('/api/wishlist/inquiry', async (req, res) => {
   const { contact, message } = req.body;
-  if (!contact || !contact.trim()) return res.status(400).json({ error: 'Contact is required' });
+  if (!nonEmpty(contact) || contact.trim().length > LIMITS.text) return res.status(400).json({ error: 'Contact is required (max 300 chars)' });
+  if (message !== undefined && (!isStr(message) || message.length > LIMITS.message)) return res.status(400).json({ error: 'Message too long' });
   const items = await prisma.wishlistItem.findMany({ where: { sessionId: req.sid } });
   const inquiry = await prisma.wishlistInquiry.create({
     data: { sessionId: req.sid, contact: contact.trim(), message: (message || '').trim(), items },
@@ -358,7 +413,12 @@ app.get('/api/carousel', async (req, res) => {
 
 app.post('/api/carousel', requireAdmin, async (req, res) => {
   const { image, eyebrow, heading, ctaLabel, ctaLink } = req.body;
-  if (!image) return res.status(400).json({ error: 'Image required' });
+  if (!nonEmpty(image) || image.length > LIMITS.url) return res.status(400).json({ error: 'Image required' });
+  for (const [key, val] of Object.entries({ eyebrow, heading, ctaLabel, ctaLink })) {
+    if (val !== undefined && (!isStr(val) || val.length > LIMITS.text)) {
+      return res.status(400).json({ error: `Invalid ${key}` });
+    }
+  }
   const last = await prisma.carouselSlide.findFirst({ orderBy: { position: 'desc' } });
   const position = last ? last.position + 1 : 0;
   const slide = await prisma.carouselSlide.create({
@@ -368,22 +428,29 @@ app.post('/api/carousel', requireAdmin, async (req, res) => {
 });
 
 app.patch('/api/carousel/:id', requireAdmin, async (req, res) => {
+  const id = intParam(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'Invalid id' });
   const { active } = req.body;
+  if (typeof active !== 'boolean') return res.status(400).json({ error: 'Invalid active flag' });
   const slide = await prisma.carouselSlide.update({
-    where: { id: parseInt(req.params.id) },
+    where: { id },
     data: { active },
   });
   res.json(slide);
 });
 
 app.delete('/api/carousel/:id', requireAdmin, async (req, res) => {
-  await prisma.carouselSlide.delete({ where: { id: parseInt(req.params.id) } });
+  const id = intParam(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'Invalid id' });
+  await prisma.carouselSlide.delete({ where: { id } });
   res.json({ ok: true });
 });
 
 app.patch('/api/carousel/:id/move', requireAdmin, async (req, res) => {
   const { direction } = req.body;
-  const id = parseInt(req.params.id);
+  if (direction !== 'up' && direction !== 'down') return res.status(400).json({ error: 'Direction must be "up" or "down"' });
+  const id = intParam(req.params.id);
+  if (id === null) return res.status(400).json({ error: 'Invalid id' });
   const slide = await prisma.carouselSlide.findUnique({ where: { id } });
   if (!slide) return res.status(404).json({ error: 'Not found' });
   const other = await prisma.carouselSlide.findFirst({

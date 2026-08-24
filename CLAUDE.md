@@ -20,6 +20,8 @@ To develop: run `npm start` and open `http://localhost:3000`.
 ### Backend (`server.js`)
 Express server with session-based auth via a `sid` cookie (anonymous sessions, no login). The session ID is auto-assigned as a UUID on first visit and stored in the cookie for 30 days. All API routes are prefixed `/api/`.
 
+**Input validation:** Write routes validate body shape via small helpers near the top of `server.js` (`nonEmpty`, `validType`, `validPrice`, `validImages`, `intParam`) plus a `LIMITS` map for max lengths. Invalid input returns `400` with an `{ error }` message; numeric `:id` params are parsed with `intParam` and reject non-integers before hitting Prisma.
+
 **Admin auth:** A single shared password (`ADMIN_PASSWORD` env var) guards all mutating and PII routes via the `requireAdmin` middleware. `POST /api/admin/login` sets an httpOnly `admin` cookie (7-day expiry) holding the password, which protected routes compare back with a constant-time check. If `ADMIN_PASSWORD` is unset, protected routes return 503. `admin.html` shows a login gate until `GET /api/admin/status` reports authenticated. Protected routes: `POST /api/upload`, product `POST/PATCH/DELETE`, carousel `POST/PATCH/DELETE` (incl. `/move`), and `GET /api/wishlist/inquiries`. The `?all=true` bypass on `GET /api/products` and `GET /api/carousel` only applies for authenticated admins; anonymous callers always get the active-only filter.
 
 **Key endpoints:**
@@ -28,8 +30,8 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 - `GET /api/products` — accepts `?type=dress|miraz` and `?all=true` (admin-only, bypasses active filter)
 - `GET/POST/PATCH/DELETE /api/products/:id` — product CRUD; PATCH accepts `name`, `price`, `type`, `description`, `images`, `active`
 - `GET /api/products/search?q=` — name search, returns up to 3 results, active-only
-- `GET/POST/PATCH/DELETE /api/cart` — cart management; unique constraint on `(sessionId, productId, color, size)`, adding same variant increments quantity
-- `GET/POST/DELETE /api/wishlist` — wishlist management
+- `GET/POST/PATCH/DELETE /api/cart` — cart management; unique constraint on `(sessionId, productId, color, size)`, adding same variant increments quantity. `POST` takes only `{ id, color, size }` — `name`/`price`/`image` are snapshotted from the DB product server-side (client-sent values are ignored to prevent price tampering). `PATCH` `delta` must be `1` or `-1`
+- `GET/POST/DELETE /api/wishlist` — wishlist management; `POST` takes `{ id, color, size }` and snapshots product data server-side like the cart
 - `GET /api/wishlist/inquiries` — admin only, returns all WishlistInquiry records
 - `POST /api/upload` — uploads image to Cloudinary, returns `{ url, publicId }`
 - `GET/POST/DELETE /api/carousel` — carousel slides; GET filters `active: true` unless `?all=true`
