@@ -78,7 +78,7 @@
       </div>
 
       <div class="panel-actions">
-        <button class="btn-cart">Add to Cart</button>
+        <button class="btn-cart" hidden>Add to Cart</button>
         <button class="btn-wishlist">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -204,6 +204,9 @@
     let PRODUCT = null;
 
     async function init() {
+      // Kick off the config fetch up front so the cart button can reveal
+      // as early as possible when payments are enabled.
+      const configPromise = Store.getConfig();
       const id = new URLSearchParams(window.location.search).get('id');
       if (id) {
         const r = await fetch(`/api/products/${id}`);
@@ -223,9 +226,11 @@
         }
       }
 
-      const cfg = await Store.getConfig();
-      if (!cfg.paymentsEnabled) {
-        document.querySelector('.btn-cart').hidden = true;
+      // Button starts hidden in the markup; only reveal it if payments are on.
+      // This avoids the flash of a visible "Add to Cart" before config loads.
+      const cfg = await configPromise;
+      if (cfg.paymentsEnabled) {
+        document.querySelector('.btn-cart').hidden = false;
       }
 
       await Store.updateBadge();
