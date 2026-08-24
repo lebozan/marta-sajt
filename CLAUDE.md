@@ -20,8 +20,11 @@ To develop: run `npm start` and open `http://localhost:3000`.
 ### Backend (`server.js`)
 Express server with session-based auth via a `sid` cookie (anonymous sessions, no login). The session ID is auto-assigned as a UUID on first visit and stored in the cookie for 30 days. All API routes are prefixed `/api/`.
 
+**Admin auth:** A single shared password (`ADMIN_PASSWORD` env var) guards all mutating and PII routes via the `requireAdmin` middleware. `POST /api/admin/login` sets an httpOnly `admin` cookie (7-day expiry) holding the password, which protected routes compare back with a constant-time check. If `ADMIN_PASSWORD` is unset, protected routes return 503. `admin.html` shows a login gate until `GET /api/admin/status` reports authenticated. Protected routes: `POST /api/upload`, product `POST/PATCH/DELETE`, carousel `POST/PATCH/DELETE` (incl. `/move`), and `GET /api/wishlist/inquiries`. The `?all=true` bypass on `GET /api/products` and `GET /api/carousel` only applies for authenticated admins; anonymous callers always get the active-only filter.
+
 **Key endpoints:**
 - `GET /api/config` — returns `{ paymentsEnabled }` driven by `ENABLE_PAYMENTS` env var
+- `POST /api/admin/login` / `logout` — set/clear the admin cookie; `GET /api/admin/status` — `{ authenticated, configured }`
 - `GET /api/products` — accepts `?type=dress|miraz` and `?all=true` (admin-only, bypasses active filter)
 - `GET/POST/PATCH/DELETE /api/products/:id` — product CRUD; PATCH accepts `name`, `price`, `type`, `description`, `images`, `active`
 - `GET /api/products/search?q=` — name search, returns up to 3 results, active-only
@@ -71,4 +74,5 @@ PAYPAL_CLIENT_ID                # PayPal credentials
 PAYPAL_CLIENT_SECRET
 PAYPAL_ENV                      # "sandbox" or "live"
 ENABLE_PAYMENTS                 # Set to "true" to show cart and enable checkout
+ADMIN_PASSWORD                  # Shared password for the admin panel; if unset, admin routes return 503
 ```

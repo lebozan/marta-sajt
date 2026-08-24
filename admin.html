@@ -211,8 +211,24 @@
 </head>
 <body>
 
-  <div class="admin-wrap">
-    <h1>MARTA — Admin</h1>
+  <!-- Login gate -->
+  <div id="loginGate" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;">
+    <form id="loginForm" style="width:100%;max-width:320px;">
+      <h1 style="margin-bottom:24px;">MARTA — Admin</h1>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" autofocus />
+      </div>
+      <button type="submit" class="btn" style="width:100%;">Sign In</button>
+      <div class="status error" id="loginError" style="display:none;"></div>
+    </form>
+  </div>
+
+  <div class="admin-wrap" id="adminWrap" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <h1 style="margin-bottom:40px;">MARTA — Admin</h1>
+      <button class="btn btn-outline" id="logoutBtn" style="margin-bottom:40px;">Log Out</button>
+    </div>
 
     <!-- Create product -->
     <div class="card">
@@ -351,6 +367,69 @@
   </div>
 
   <script>
+    // ── Auth gate ──
+    // Every admin action hits a requireAdmin-protected route. A 401 anywhere
+    // (e.g. the cookie expired) bounces back to the login screen.
+    const _fetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const res = await _fetch(...args);
+      if (res.status === 401) showLoginGate();
+      return res;
+    };
+
+    const loginGate = document.getElementById('loginGate');
+    const adminWrap = document.getElementById('adminWrap');
+    let   inited    = false;
+
+    function showLoginGate() {
+      loginGate.style.display = 'flex';
+      adminWrap.style.display = 'none';
+    }
+
+    function showAdmin() {
+      loginGate.style.display = 'none';
+      adminWrap.style.display = 'block';
+      if (!inited) { inited = true; initAdmin(); }
+    }
+
+    function initAdmin() {
+      renderProductImages();
+      loadProducts();
+      loadSlides();
+      loadInquiries();
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const errEl = document.getElementById('loginError');
+      errEl.style.display = 'none';
+      const password = document.getElementById('loginPassword').value;
+      const r = await _fetch('/api/admin/login', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password }),
+      });
+      if (r.ok) {
+        document.getElementById('loginPassword').value = '';
+        showAdmin();
+      } else {
+        const data = await r.json().catch(() => ({}));
+        errEl.textContent   = data.error || 'Sign in failed';
+        errEl.style.display = 'block';
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await _fetch('/api/admin/logout', { method: 'POST' });
+      showLoginGate();
+    });
+
+    // Decide which screen to show on load.
+    _fetch('/api/admin/status')
+      .then(r => r.json())
+      .then(s => { s.authenticated ? showAdmin() : showLoginGate(); })
+      .catch(showLoginGate);
+
     const createBtn    = document.getElementById('createBtn');
     const createStatus = document.getElementById('createStatus');
     const productList  = document.getElementById('productList');
@@ -604,9 +683,6 @@
       el.style.display = 'block';
     }
 
-    renderProductImages();
-    loadProducts();
-
     // ── Carousel slides ──
 
     async function loadSlides() {
@@ -711,8 +787,6 @@
       }
     });
 
-    loadSlides();
-
     // ── Wishlist inquiries ──
 
     async function loadInquiries() {
@@ -739,7 +813,6 @@
       }).join('');
     }
 
-    loadInquiries();
   </script>
 
 </body>

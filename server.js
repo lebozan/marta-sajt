@@ -4,13 +4,14 @@ const path         = require('path');
 const multer       = require('multer');
 const cloudinary   = require('cloudinary').v2;
 const { PrismaClient } = require('@prisma/client');
-const { randomUUID }   = require('crypto');
+const { randomUUID, timingSafeEqual } = require('crypto');
 
 const app              = express();
 const prisma           = new PrismaClient();
 const upload           = multer({ storage: multer.memoryStorage() });
 const PORT             = process.env.PORT || 3000;
 const PAYMENTS_ENABLED = process.env.ENABLE_PAYMENTS === 'true';
+const ADMIN_PASSWORD   = process.env.ADMIN_PASSWORD || '';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -38,6 +39,51 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Admin auth ──
+// Single shared password (ADMIN_PASSWORD env var). On login the password is
+// stored in an httpOnly `admin` cookie; protected routes compare it back.
+
+function safeEqual(a, b) {
+  const ab = Buffer.from(String(a));
+  const bb = Buffer.from(String(b));
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
+
+function isAdmin(req) {
+  return ADMIN_PASSWORD !== '' && !!req.cookies.admin && safeEqual(req.cookies.admin, ADMIN_PASSWORD);
+}
+
+function requireAdmin(req, res, next) {
+  if (!ADMIN_PASSWORD) return res.status(503).json({ error: 'Admin auth not configured' });
+  if (!isAdmin(req))   return res.status(401).json({ error: 'Unauthorized' });
+  next();
+}
+
+app.post('/api/admin/login', (req, res) => {
+  if (!ADMIN_PASSWORD) return res.status(503).json({ error: 'Admin auth not configured' });
+  const { password } = req.body;
+  if (!password || !safeEqual(password, ADMIN_PASSWORD)) {
+    return res.status(401).json({ error: 'Incorrect password' });
+  }
+  res.cookie('admin', ADMIN_PASSWORD, {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  res.clearCookie('admin');
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/status', (req, res) => {
+  res.json({ authenticated: isAdmin(req), configured: !!ADMIN_PASSWORD });
+});
+
 // ── Images ──
 
 function streamToCloudinary(buffer) {
@@ -49,7 +95,7 @@ function streamToCloudinary(buffer) {
   });
 }
 
-app.post('/api/upload', upload.single('image'), async (req, res) => {
+app.post('/api/upload', requireAdmin, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const result = await streamToCloudinary(req.file.buffer);
   res.json({ url: result.secure_url, publicId: result.public_id });
@@ -64,8 +110,9 @@ app.get('/api/config', (req, res) => {
 // ── Products ──
 
 app.get('/api/products', async (req, res) => {
+  const showAll = req.query.all === 'true' && isAdmin(req);
   const where = {
-    ...(req.query.all !== 'true' && { active: true }),
+    ...(showAll ? {} : { active: true }),
     ...(req.query.type ? { type: req.query.type } : {}),
   };
   const products = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } });
@@ -89,14 +136,14 @@ app.get('/api/products/:id', async (req, res) => {
   res.json(product);
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/products', requireAdmin, async (req, res) => {
   const { name, price, images = [], type = 'dress', description = '' } = req.body;
   if (!images.length) return res.status(400).json({ error: 'At least one image required' });
   const product = await prisma.product.create({ data: { name, price, image: images[0], images, type, description } });
   res.json(product);
 });
 
-app.patch('/api/products/:id', async (req, res) => {
+app.patch('/api/products/:id', requireAdmin, async (req, res) => {
   const { name, price, images, type, active, description } = req.body;
   const data = {};
   if (name        !== undefined) data.name        = name;
@@ -109,7 +156,7 @@ app.patch('/api/products/:id', async (req, res) => {
   res.json(product);
 });
 
-app.delete('/api/products/:id', async (req, res) => {
+app.delete('/api/products/:id', requireAdmin, async (req, res) => {
   await prisma.product.delete({ where: { id: req.params.id } });
   res.json({ ok: true });
 });
@@ -293,7 +340,7 @@ app.post('/api/wishlist/inquiry', async (req, res) => {
   res.json({ ok: true, id: inquiry.id });
 });
 
-app.get('/api/wishlist/inquiries', async (req, res) => {
+app.get('/api/wishlist/inquiries', requireAdmin, async (req, res) => {
   const inquiries = await prisma.wishlistInquiry.findMany({ orderBy: { createdAt: 'desc' } });
   res.json(inquiries);
 });
@@ -301,12 +348,12 @@ app.get('/api/wishlist/inquiries', async (req, res) => {
 // ── Carousel ──
 
 app.get('/api/carousel', async (req, res) => {
-  const where = req.query.all === 'true' ? {} : { active: true };
+  const where = (req.query.all === 'true' && isAdmin(req)) ? {} : { active: true };
   const slides = await prisma.carouselSlide.findMany({ where, orderBy: { position: 'asc' } });
   res.json(slides);
 });
 
-app.post('/api/carousel', async (req, res) => {
+app.post('/api/carousel', requireAdmin, async (req, res) => {
   const { image, eyebrow, heading, ctaLabel, ctaLink } = req.body;
   if (!image) return res.status(400).json({ error: 'Image required' });
   const last = await prisma.carouselSlide.findFirst({ orderBy: { position: 'desc' } });
@@ -317,7 +364,7 @@ app.post('/api/carousel', async (req, res) => {
   res.json(slide);
 });
 
-app.patch('/api/carousel/:id', async (req, res) => {
+app.patch('/api/carousel/:id', requireAdmin, async (req, res) => {
   const { active } = req.body;
   const slide = await prisma.carouselSlide.update({
     where: { id: parseInt(req.params.id) },
@@ -326,12 +373,12 @@ app.patch('/api/carousel/:id', async (req, res) => {
   res.json(slide);
 });
 
-app.delete('/api/carousel/:id', async (req, res) => {
+app.delete('/api/carousel/:id', requireAdmin, async (req, res) => {
   await prisma.carouselSlide.delete({ where: { id: parseInt(req.params.id) } });
   res.json({ ok: true });
 });
 
-app.patch('/api/carousel/:id/move', async (req, res) => {
+app.patch('/api/carousel/:id/move', requireAdmin, async (req, res) => {
   const { direction } = req.body;
   const id = parseInt(req.params.id);
   const slide = await prisma.carouselSlide.findUnique({ where: { id } });
