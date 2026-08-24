@@ -42,7 +42,7 @@
     }
     searchResults.innerHTML = products.map(p => `
       <a href="product.html?id=${p.id}" class="search-result-card">
-        <img src="${cloudinaryUrl(p.image, 120)}" alt="${p.name}" class="search-result-img" />
+        <img src="${cloudinaryUrl(p.image, 120)}" srcset="${cloudinarySrcset(p.image, [80, 120])}" sizes="40px" alt="${p.name}" class="search-result-img" />
         <div class="search-result-info">
           <span class="search-result-name">${p.name}</span>
           <span class="search-result-price">€${p.price.toFixed(2)}</span>

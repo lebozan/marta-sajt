@@ -150,9 +150,9 @@
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
-      track.innerHTML = slides.map(s => `
+      track.innerHTML = slides.map((s, i) => `
         <div class="carousel-slide">
-          <img src="${esc(s.image)}" alt="${esc(s.eyebrow)}" class="carousel-img" />
+          <img src="${esc(cloudinaryUrl(s.image, 1600))}" srcset="${esc(cloudinarySrcset(s.image, [640, 960, 1280, 1600, 2000]))}" sizes="100vw" alt="${esc(s.eyebrow)}" class="carousel-img" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} />
           <div class="carousel-caption">
             <p class="carousel-eyebrow">${esc(s.eyebrow)}</p>
             <h2 class="carousel-heading">${esc(s.heading).replace(/\n/g, '<br>')}</h2>
@@ -210,7 +210,7 @@
       grid.innerHTML = show.map(p => `
         <article class="product-card">
           <a href="product.html?id=${p.id}" class="product-image-link">
-            <img src="${cloudinaryUrl(p.image, 600)}" alt="${p.name}" loading="lazy" />
+            <img src="${cloudinaryUrl(p.image, 600)}" srcset="${cloudinarySrcset(p.image, [200, 300, 400, 600])}" sizes="(max-width: 768px) 50vw, 25vw" alt="${p.name}" loading="lazy" />
           </a>
           <a href="product.html?id=${p.id}" class="product-info">
             <span class="product-name">${p.name}</span>

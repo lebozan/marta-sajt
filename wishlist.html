@@ -98,7 +98,7 @@
       wishlistGridEl.innerHTML = list.map(item => `
         <article class="wishlist-card" data-item-id="${item.id}">
           <a href="product.html?id=${item.productId}" class="product-image-link">
-            <img src="${cloudinaryUrl(item.image, 400)}" alt="${item.name}" />
+            <img src="${cloudinaryUrl(item.image, 400)}" srcset="${cloudinarySrcset(item.image, [200, 300, 400, 600, 800])}" sizes="(max-width: 768px) 50vw, 33vw" alt="${item.name}" loading="lazy" />
           </a>
           <div class="product-info" style="text-decoration:none;color:inherit;">
             <span class="product-name">${item.name}</span>

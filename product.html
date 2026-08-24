@@ -217,7 +217,7 @@
           descEl.hidden = !data.description;
           const imgs = (data.images && data.images.length) ? data.images : [data.image];
           document.getElementById('productImages').innerHTML = imgs
-            .map(url => `<img src="${cloudinaryUrl(url, 1200)}" alt="${data.name}" />`)
+            .map((url, i) => `<img src="${cloudinaryUrl(url, 1200)}" srcset="${cloudinarySrcset(url, [400, 600, 800, 1200, 1600])}" sizes="(max-width: 900px) 100vw, 50vw" alt="${data.name}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} />`)
             .join('');
         }
       }

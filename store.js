@@ -3,6 +3,14 @@ function cloudinaryUrl(url, width) {
   return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
 }
 
+// Build a responsive srcset (`url widthw, ...`) so browsers download an
+// appropriately-sized image per device. Returns '' for non-Cloudinary URLs
+// (e.g. placeholders), in which case callers fall back to plain `src`.
+function cloudinarySrcset(url, widths) {
+  if (!url || !url.includes('/upload/')) return '';
+  return widths.map(w => `${cloudinaryUrl(url, w)} ${w}w`).join(', ');
+}
+
 const Store = {
   _config: null,
 
