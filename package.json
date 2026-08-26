@@ -4,6 +4,7 @@
   "scripts": {
     "start": "node server.js",
     "db:push": "prisma db push",
+    "seed": "node prisma/seed-catalog.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {
