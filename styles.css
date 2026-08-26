@@ -1585,6 +1585,38 @@ main {
   border-top: 1px solid #fce6ea;
 }
 
+/* ── About & contact pages ── */
+
+.about-page, .contact-page { max-width: 1280px; margin: 0 auto; padding: 96px 48px 112px; }
+.page-kicker { color: #c9607a; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.about-intro, .contact-intro { max-width: 770px; margin-bottom: 96px; }
+.about-intro h1, .contact-intro h1 { font-size: clamp(42px, 6vw, 76px); font-weight: 300; letter-spacing: -.055em; line-height: 1.02; margin: 18px 0 28px; }
+.about-lead, .contact-intro > p { color: #555555; font-size: 17px; font-weight: 300; line-height: 1.7; max-width: 600px; }
+.about-story { align-items: center; display: grid; gap: clamp(40px, 8vw, 120px); grid-template-columns: minmax(0, 1fr) minmax(280px, .78fr); }
+.about-image-wrap { background: #f2d0d8; }
+.about-image-wrap img { display: block; height: min(640px, 63vw); object-fit: cover; width: 100%; }
+.about-copy h2, .contact-card h2, .contact-help h2 { font-size: clamp(28px, 3vw, 42px); font-weight: 300; letter-spacing: -.045em; line-height: 1.1; margin: 16px 0 24px; }
+.about-copy > p { color: #555555; font-size: 15px; font-weight: 300; line-height: 1.75; margin-bottom: 16px; }
+.about-copy a:not(.about-cta) { color: #111111; }
+.about-cta, .instagram-cta { align-items: center; background: #111111; color: #ffffff; display: inline-flex; font-size: 12px; letter-spacing: .07em; margin-top: 18px; padding: 15px 22px; text-decoration: none; transition: background .2s ease; }
+.about-cta:hover, .instagram-cta:hover { background: #c9607a; }
+.about-values { border-top: 1px solid #f2d0d8; display: grid; gap: 40px; grid-template-columns: repeat(3, 1fr); margin-top: 112px; padding-top: 32px; }
+.about-values span { color: #c9607a; font-size: 12px; }
+.about-values h2 { font-size: 18px; font-weight: 500; margin: 28px 0 12px; }
+.about-values p { color: #666666; font-size: 14px; font-weight: 300; line-height: 1.65; max-width: 250px; }
+.contact-intro { margin-bottom: 64px; }
+.contact-card { background: #f2d0d8; display: flex; justify-content: space-between; min-height: 370px; overflow: hidden; padding: 56px 64px; position: relative; }
+.contact-card-copy { max-width: 460px; position: relative; z-index: 1; }
+.contact-card-copy > p:not(.page-kicker) { color: #555555; font-size: 15px; font-weight: 300; line-height: 1.7; }
+.instagram-cta { gap: 28px; }
+.instagram-cta span { font-size: 18px; line-height: 1; }
+.contact-card-mark { align-self: flex-end; color: rgba(255, 255, 255, .55); font-size: clamp(180px, 26vw, 350px); font-weight: 300; letter-spacing: -.12em; line-height: .72; margin-right: .05em; }
+.contact-help { align-items: end; border-bottom: 1px solid #f2d0d8; display: flex; justify-content: space-between; padding: 80px 0 28px; }
+.contact-help h2 { margin: 0 0 12px; }
+.contact-help p { color: #666666; font-size: 14px; font-weight: 300; line-height: 1.6; max-width: 380px; }
+.contact-help a { border-bottom: 1px solid #111111; color: #111111; font-size: 13px; padding-bottom: 4px; text-decoration: none; white-space: nowrap; }
+.contact-help a span { margin-left: 12px; }
+
 /* ── Responsive ── */
 
 @media (max-width: 1024px) {
@@ -1816,6 +1848,15 @@ main {
     flex-direction: column;
     gap: 32px;
   }
+
+  .about-page, .contact-page { padding: 56px 20px 72px; }
+  .about-intro, .contact-intro { margin-bottom: 56px; }
+  .about-story { grid-template-columns: 1fr; }
+  .about-image-wrap img { height: 115vw; max-height: 560px; }
+  .about-values { gap: 32px; grid-template-columns: 1fr; margin-top: 72px; }
+  .contact-card { min-height: 0; padding: 40px 28px; }
+  .contact-card-mark { display: none; }
+  .contact-help { align-items: flex-start; flex-direction: column; gap: 28px; padding-top: 56px; }
 }
 
 /* ── Payments disabled ── */
