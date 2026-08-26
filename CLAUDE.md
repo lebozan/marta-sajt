@@ -33,11 +33,14 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 - `GET/POST/PATCH/DELETE /api/cart` — cart management; unique constraint on `(sessionId, productId, color, size)`, adding same variant increments quantity. `POST` takes only `{ id, color, size }` — `name`/`price`/`image` are snapshotted from the DB product server-side (client-sent values are ignored to prevent price tampering). `PATCH` `delta` must be `1` or `-1`
 - `GET/POST/DELETE /api/wishlist` — wishlist management; `POST` takes `{ id, color, size }` and snapshots product data server-side like the cart
 - `GET /api/wishlist/inquiries` — admin only, returns all WishlistInquiry records
+- `POST /api/admin/test-email` — admin only, sends a sample notification to `NOTIFY_EMAIL`; 503 if mail is unconfigured
 - `POST /api/upload` — uploads image to Cloudinary, returns `{ url, publicId }`
 - `GET/POST/DELETE /api/carousel` — carousel slides; GET filters `active: true` unless `?all=true`
 - `PATCH /api/carousel/:id` — toggle `active` on a slide
 - `PATCH /api/carousel/:id/move` — reorder slides by swapping `position` values
 - `POST /api/checkout/create-order` / `capture-order` — PayPal payment flow; both guarded by `PAYMENTS_ENABLED`
+
+**Email notifications:** `POST /api/wishlist/inquiry` emails the shop owner via the Resend REST API (plain `fetch`, no SDK). Helpers live in the "Email notifications" section of `server.js`: `sendMail()` posts to `api.resend.com/emails`, `inquiryEmailHtml()` renders a table-layout HTML mail with the contact, message, and item snapshot. Sending is off unless both `RESEND_API_KEY` and `NOTIFY_EMAIL` are set, and is fire-and-forget — a mail failure is logged but never fails the inquiry. `Reply-To` is set to the customer's contact when it looks like an email address.
 
 **SEO:**
 - Static pages (`index`, `dresses`, `miraz`) have hardcoded meta description + Open Graph + Twitter tags + `<link rel="canonical">`. Base URL is `SITE_URL` (defaults to the Railway URL).
@@ -84,4 +87,7 @@ PAYPAL_ENV                      # "sandbox" or "live"
 ENABLE_PAYMENTS                 # Set to "true" to show cart and enable checkout
 ADMIN_PASSWORD                  # Shared password for the admin panel; if unset, admin routes return 503
 SITE_URL                        # Canonical base URL for SEO tags/sitemap (defaults to the Railway URL)
+RESEND_API_KEY                  # Resend API key; with NOTIFY_EMAIL, enables wishlist inquiry emails
+NOTIFY_EMAIL                    # Shop inbox that receives inquiry notifications
+NOTIFY_FROM                     # Sender address, must be a Resend-verified domain (defaults to onboarding@resend.dev)
 ```

@@ -321,7 +321,12 @@
     <!-- Wishlist inquiries -->
     <div class="card">
       <h2>Wishlist Inquiries</h2>
-      <div id="inquiryList">
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">
+        New inquiries are emailed automatically when <code>RESEND_API_KEY</code> and <code>NOTIFY_EMAIL</code> are set on the server.
+      </p>
+      <button class="btn btn-outline" id="testEmailBtn">Send test email</button>
+      <div class="status" id="testEmailStatus"></div>
+      <div id="inquiryList" style="margin-top:16px;">
         <p style="font-size:13px;color:#888;">Loading...</p>
       </div>
     </div>
@@ -789,6 +794,22 @@
     });
 
     // ── Wishlist inquiries ──
+
+    document.getElementById('testEmailBtn').addEventListener('click', async e => {
+      const btn    = e.currentTarget;
+      const status = document.getElementById('testEmailStatus');
+      btn.disabled = true;
+      try {
+        const r    = await fetch('/api/admin/test-email', { method: 'POST' });
+        const data = await r.json();
+        if (data.ok) showStatus(status, `Test email sent to ${data.sentTo}.`);
+        else         showStatus(status, data.error || 'Could not send test email.', true);
+      } catch (err) {
+        showStatus(status, 'Could not send test email.', true);
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     async function loadInquiries() {
       const inquiries = await fetch('/api/wishlist/inquiries').then(r => r.json());

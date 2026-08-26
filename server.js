@@ -15,6 +15,9 @@ const PAYMENTS_ENABLED = process.env.ENABLE_PAYMENTS === 'true';
 const ADMIN_PASSWORD   = process.env.ADMIN_PASSWORD || '';
 const SITE_URL         = (process.env.SITE_URL || 'https://zirafiona.up.railway.app').replace(/\/$/, '');
 const OG_IMAGE         = 'https://res.cloudinary.com/dkcha41gs/image/upload/v1777981668/marta/ugkc4goltm8lwr2ca2iz.png';
+const RESEND_API_KEY   = process.env.RESEND_API_KEY || '';
+const NOTIFY_EMAIL     = process.env.NOTIFY_EMAIL || '';
+const NOTIFY_FROM      = process.env.NOTIFY_FROM || 'MARTA <onboarding@resend.dev>';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -353,6 +356,104 @@ app.post('/api/checkout/capture-order', async (req, res) => {
   }
 });
 
+// ── Email notifications ──
+// Owner alert when a wishlist inquiry comes in, sent through the Resend REST
+// API (no SDK — global fetch is enough). Notifications stay off unless both
+// RESEND_API_KEY and NOTIFY_EMAIL are set. Callers fire and forget: a mail
+// failure is logged and never breaks the request that triggered it.
+
+const NOTIFICATIONS_ENABLED = !!(RESEND_API_KEY && NOTIFY_EMAIL);
+const EMAIL_RE              = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+async function sendMail({ subject, html, replyTo }) {
+  if (!NOTIFICATIONS_ENABLED) return { skipped: true };
+  const payload = { from: NOTIFY_FROM, to: [NOTIFY_EMAIL], subject, html };
+  if (replyTo) payload.reply_to = replyTo;
+  const r = await fetch('https://api.resend.com/emails', {
+    method:  'POST',
+    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+    signal:  AbortSignal.timeout(10000),
+  });
+  if (!r.ok) throw new Error(`Resend responded ${r.status}: ${(await r.text()).slice(0, 300)}`);
+  return r.json();
+}
+
+// Cloudinary thumbnails for the mail body; other hosts pass through untouched.
+const emailThumb = url => String(url || '').includes('/upload/')
+  ? String(url).replace('/upload/', '/upload/f_auto,q_auto,w_160/')
+  : String(url || '');
+
+function inquiryEmailHtml({ contact, message, items, createdAt }) {
+  const list = Array.isArray(items) ? items : [];
+  const rows = list.map(i => `
+        <tr>
+          <td style="padding:12px 0;border-bottom:1px solid #f0e4e8;width:72px;">
+            <img src="${escapeHtml(emailThumb(i.image))}" width="64" height="86" alt="" style="display:block;border-radius:4px;object-fit:cover;" />
+          </td>
+          <td style="padding:12px 0 12px 14px;border-bottom:1px solid #f0e4e8;font-size:14px;color:#111111;">
+            <a href="${SITE_URL}/product.html?id=${encodeURIComponent(i.productId)}" style="color:#111111;text-decoration:none;font-weight:500;">${escapeHtml(i.name)}</a>
+            <div style="color:#77626a;font-size:13px;padding-top:4px;">${escapeHtml(i.color)} · ${escapeHtml(i.size)}</div>
+          </td>
+          <td style="padding:12px 0;border-bottom:1px solid #f0e4e8;font-size:14px;color:#111111;text-align:right;white-space:nowrap;">€${Number(i.price).toFixed(2)}</td>
+        </tr>`).join('');
+
+  const total = list.reduce((sum, i) => sum + Number(i.price || 0), 0);
+
+  return `<!DOCTYPE html>
+<html><body style="margin:0;padding:24px;background:#fdf6f8;font-family:Inter,Helvetica,Arial,sans-serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:6px;padding:28px;">
+    <tr><td>
+      <p style="margin:0 0 4px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c9607a;">MARTA</p>
+      <h1 style="margin:0 0 20px;font-size:20px;font-weight:600;color:#111111;">New wishlist inquiry</h1>
+
+      <p style="margin:0 0 6px;font-size:14px;color:#111111;"><strong>Contact:</strong> ${escapeHtml(contact)}</p>
+      <p style="margin:0 0 6px;font-size:14px;color:#111111;"><strong>Received:</strong> ${escapeHtml(new Date(createdAt).toLocaleString('en-GB'))}</p>
+      ${message ? `<p style="margin:16px 0 0;padding:12px 14px;background:#fdf6f8;border-radius:4px;font-size:14px;color:#111111;white-space:pre-wrap;">${escapeHtml(message)}</p>` : ''}
+
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:24px;">
+        <tr><td colspan="3" style="padding-bottom:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#77626a;">${list.length} item${list.length === 1 ? '' : 's'}</td></tr>
+        ${rows || `<tr><td style="font-size:14px;color:#77626a;padding:12px 0;">The wishlist was empty when this was sent.</td></tr>`}
+        ${list.length ? `<tr><td colspan="2" style="padding-top:14px;font-size:14px;color:#111111;font-weight:600;">Total</td>
+        <td style="padding-top:14px;font-size:14px;color:#111111;font-weight:600;text-align:right;">€${total.toFixed(2)}</td></tr>` : ''}
+      </table>
+
+      <p style="margin:28px 0 0;"><a href="${SITE_URL}/admin.html" style="display:inline-block;background:#c9607a;color:#ffffff;text-decoration:none;font-size:14px;padding:11px 22px;border-radius:4px;">Open admin panel</a></p>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+function notifyInquiry(inquiry, items) {
+  sendMail({
+    subject: `New wishlist inquiry — ${items.length} item${items.length === 1 ? '' : 's'} — ${inquiry.contact}`,
+    html:    inquiryEmailHtml({ ...inquiry, items }),
+    replyTo: EMAIL_RE.test(inquiry.contact) ? inquiry.contact : undefined,
+  }).catch(err => console.error('[notify] wishlist inquiry email failed:', err.message));
+}
+
+// Lets the admin confirm the mail setup without submitting a fake inquiry.
+app.post('/api/admin/test-email', requireAdmin, async (req, res) => {
+  if (!NOTIFICATIONS_ENABLED) {
+    return res.status(503).json({ error: 'Email notifications are not configured (set RESEND_API_KEY and NOTIFY_EMAIL)' });
+  }
+  try {
+    await sendMail({
+      subject: 'MARTA — test notification',
+      html:    inquiryEmailHtml({
+        contact:   'test@example.com',
+        message:   'This is a test of the wishlist inquiry notification.',
+        createdAt: new Date(),
+        items:     [],
+      }),
+    });
+    res.json({ ok: true, sentTo: NOTIFY_EMAIL });
+  } catch (err) {
+    console.error('[notify] test email failed:', err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
 // ── Wishlist ──
 
 app.get('/api/wishlist', async (req, res) => {
@@ -395,6 +496,7 @@ app.post('/api/wishlist/inquiry', async (req, res) => {
     data: { sessionId: req.sid, contact: contact.trim(), message: (message || '').trim(), items },
   });
   await prisma.wishlistItem.deleteMany({ where: { sessionId: req.sid } });
+  notifyInquiry(inquiry, items); // fire-and-forget; never blocks the response
   res.json({ ok: true, id: inquiry.id });
 });
 
