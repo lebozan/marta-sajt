@@ -25,6 +25,33 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// ── Async error forwarding ──
+// Express 4 does not forward a rejected promise from an async handler to the
+// error middleware: the rejection goes unhandled and Node kills the process,
+// so one bad request takes the whole server down. Patch the routing methods
+// once here — every handler registered below is wrapped automatically, which
+// keeps new routes safe by default. Arity-4 functions are error handlers and
+// are passed through untouched.
+function forwardRejections(handler) {
+  return function (req, res, next) {
+    let out;
+    try { out = handler.call(this, req, res, next); }
+    catch (err) { return next(err); }
+    if (out && typeof out.then === 'function') out.catch(next);
+    return out;
+  };
+}
+
+for (const method of ['use', 'get', 'post', 'put', 'patch', 'delete', 'all']) {
+  const original = app[method].bind(app);
+  app[method] = (...args) => original(...args.map(arg =>
+    typeof arg === 'function' && arg.length < 4 ? forwardRejections(arg) : arg));
+}
+
+// Backstop for rejections raised outside a request (fire-and-forget work).
+// Logging beats the default, which is to terminate the process.
+process.on('unhandledRejection', err => console.error('[unhandledRejection]', err));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -105,6 +132,11 @@ const validImages = v => Array.isArray(v) && v.length > 0 && v.length <= LIMITS.
 const validColors = v => Array.isArray(v) && v.length <= LIMITS.colors
   && v.every(c => nonEmpty(c) && c.length <= LIMITS.text);
 const intParam    = v => { const n = parseInt(v, 10); return Number.isInteger(n) ? n : null; };
+// Query values are normally strings, but Express's extended parser turns
+// `?a[]=x` into an array and `?a[b]=c` into an object — either shape makes
+// Prisma throw. Returns undefined when absent, the string when valid, and
+// null when the caller sent something that isn't a plain string.
+const queryStr    = v => v === undefined ? undefined : (isStr(v) ? v : null);
 
 // ── Images ──
 
@@ -132,17 +164,21 @@ app.get('/api/config', (req, res) => {
 // ── Products ──
 
 app.get('/api/products', async (req, res) => {
+  const type = queryStr(req.query.type);
+  if (type === null) return res.status(400).json({ error: 'Invalid type' });
   const showAll = req.query.all === 'true' && isAdmin(req);
   const where = {
     ...(showAll ? {} : { active: true }),
-    ...(req.query.type ? { type: req.query.type } : {}),
+    ...(type ? { type } : {}),
   };
   const products = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } });
   res.json(products);
 });
 
 app.get('/api/products/search', async (req, res) => {
-  const q = (req.query.q || '').trim();
+  const raw = queryStr(req.query.q);
+  if (raw === null) return res.status(400).json({ error: 'Invalid query' });
+  const q = (raw || '').trim();
   if (!q) return res.json([]);
   const products = await prisma.product.findMany({
     where: { active: true, name: { contains: q, mode: 'insensitive' } },
