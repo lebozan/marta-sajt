@@ -92,7 +92,7 @@ app.get('/api/admin/status', (req, res) => {
 
 // ── Validation helpers ──
 
-const LIMITS = { name: 200, description: 5000, url: 2000, text: 300, message: 3000, images: 20 };
+const LIMITS = { name: 200, description: 5000, url: 2000, text: 300, message: 3000, images: 20, colors: 30 };
 
 const isStr       = v => typeof v === 'string';
 const nonEmpty    = v => isStr(v) && v.trim().length > 0;
@@ -100,6 +100,10 @@ const validType   = v => v === 'dress' || v === 'miraz';
 const validPrice  = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1_000_000;
 const validImages = v => Array.isArray(v) && v.length > 0 && v.length <= LIMITS.images
   && v.every(u => nonEmpty(u) && u.length <= LIMITS.url);
+// Unlike images, an empty colour list is valid: it means the product isn't
+// offered in a choice of colours and the page falls back to its defaults.
+const validColors = v => Array.isArray(v) && v.length <= LIMITS.colors
+  && v.every(c => nonEmpty(c) && c.length <= LIMITS.text);
 const intParam    = v => { const n = parseInt(v, 10); return Number.isInteger(n) ? n : null; };
 
 // ── Images ──
@@ -155,20 +159,21 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 app.post('/api/products', requireAdmin, async (req, res) => {
-  const { name, price, images = [], type = 'dress', description = '' } = req.body;
+  const { name, price, images = [], colors = [], type = 'dress', description = '' } = req.body;
   if (!nonEmpty(name) || name.length > LIMITS.name) return res.status(400).json({ error: 'Name is required (max 200 chars)' });
   if (!validPrice(price))                           return res.status(400).json({ error: 'Price must be a number between 0 and 1,000,000' });
   if (!validType(type))                             return res.status(400).json({ error: 'Type must be "dress" or "miraz"' });
   if (!isStr(description) || description.length > LIMITS.description) return res.status(400).json({ error: 'Description too long' });
   if (!validImages(images))                         return res.status(400).json({ error: 'At least one valid image required' });
+  if (!validColors(colors))                         return res.status(400).json({ error: 'Invalid colors' });
   const product = await prisma.product.create({
-    data: { name: name.trim(), price, image: images[0], images, type, description: description.trim() },
+    data: { name: name.trim(), price, image: images[0], images, colors, type, description: description.trim() },
   });
   res.json(product);
 });
 
 app.patch('/api/products/:id', requireAdmin, async (req, res) => {
-  const { name, price, images, type, active, description } = req.body;
+  const { name, price, images, colors, type, active, description } = req.body;
   const data = {};
   if (name !== undefined) {
     if (!nonEmpty(name) || name.length > LIMITS.name) return res.status(400).json({ error: 'Invalid name' });
@@ -193,6 +198,10 @@ app.patch('/api/products/:id', requireAdmin, async (req, res) => {
   if (images !== undefined) {
     if (!validImages(images)) return res.status(400).json({ error: 'At least one valid image required' });
     data.images = images; data.image = images[0];
+  }
+  if (colors !== undefined) {
+    if (!validColors(colors)) return res.status(400).json({ error: 'Invalid colors' });
+    data.colors = colors;
   }
   const product = await prisma.product.update({ where: { id: req.params.id }, data });
   res.json(product);

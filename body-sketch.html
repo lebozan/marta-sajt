@@ -96,7 +96,7 @@
     </div>
 
     <div class="sketch-canvas">
-      <svg id="bodySvg" viewBox="0 0 300 560" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="bodySvg" viewBox="0 0 300 580" role="img" aria-label="Interactive female body measurement sketch" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
 
   </main>
@@ -132,7 +132,7 @@
     function C(c1, c2, end)  { return `C ${c1} ${c2} ${end}`; }
 
     // ── Main draw ────────────────────────────────────────────────────
-    function drawBody(bust, underbust, waist, hips) {
+    function drawBodyLegacy(bust, underbust, waist, hips) {
       const bHW = hw(bust);
       const uHW = hw(underbust);
       const wHW = hw(waist);
@@ -316,6 +316,95 @@
       `;
     }
 
+    // ── Refined fashion-figure sketch ────────────────────────────────
+    // One continuous silhouette avoids the segmented, paper-doll look and
+    // keeps every measurement change visible in the proportions of the body.
+    function drawBody(bust, underbust, waist, hips) {
+      const bHW = hw(bust);
+      const uHW = hw(underbust);
+      const wHW = hw(waist);
+      const hHW = hw(hips);
+      const sHW = Math.max(42, bHW * 1.03);
+      const armholeHW = bHW * .73;
+      const outerThigh = hHW * .82;
+      const kneeHW = hHW * .64;
+      const ankleHW = Math.max(18, hHW * .45);
+      const innerKneeHW = Math.max(11, hHW * .23);
+      const innerAnkleHW = Math.max(10, hHW * .20);
+      const crotchGap = Math.max(9, hHW * .18);
+      const stroke = '#5a3d43';
+      const fill = 'url(#body-skin)';
+
+      const armPath = side => [
+        `M ${pt(side * (sHW - 2), SHOULDER_Y + 2)}`,
+        C(pt(side * (sHW + 13), SHOULDER_Y + 22), pt(side * (sHW + 19), 174), pt(side * (sHW + 15), 226)),
+        C(pt(side * (sHW + 13), 253), pt(side * (sHW + 10), 278), pt(side * (sHW + 7), 300)),
+        C(pt(side * (sHW + 8), 311), pt(side * (sHW + 12), 318), pt(side * (sHW + 8), 326)),
+        C(pt(side * (sHW + 5), 332), pt(side * (sHW - 2), 329), pt(side * (sHW - 1), 320)),
+        C(pt(side * (sHW + 2), 293), pt(side * (sHW + 4), 262), pt(side * (sHW + 4), 228)),
+        C(pt(side * (sHW + 4), 180), pt(side * (sHW + 2), 132), pt(side * (sHW - 4), SHOULDER_Y + 4)),
+        'Z',
+      ].join(' ');
+
+      const body = [
+        `M ${pt(NECK_HW, NECK_TOP_Y)}`,
+        C(pt(NECK_HW + 14, 78), pt(sHW - 4, 91), pt(sHW, SHOULDER_Y)),
+        C(pt(sHW + 1, 112), pt(armholeHW + 5, 125), pt(armholeHW, ARMPIT_Y)),
+        C(pt(armholeHW - 7, 142), pt(bHW + 7, BUST_Y - 5), pt(bHW, BUST_Y)),
+        C(pt(bHW + 1, 168), pt(uHW + 2, 180), pt(uHW, UNDERBUST_Y)),
+        C(pt(uHW + 5, 204), pt(wHW + 7, 220), pt(wHW, WAIST_Y)),
+        C(pt(wHW + 7, 256), pt(hHW + 5, 278), pt(hHW, HIP_Y)),
+        C(pt(hHW + 1, 313), pt(outerThigh + 6, 361), pt(outerThigh, 394)),
+        C(pt(outerThigh - 2, 416), pt(kneeHW + 3, 430), pt(kneeHW, KNEE_Y)),
+        C(pt(kneeHW - 2, 462), pt(ankleHW + 1, 495), pt(ankleHW, ANKLE_Y)),
+        C(pt(ankleHW + 2, 525), pt(ankleHW + 14, 533), pt(ankleHW + 19, 539)),
+        C(pt(ankleHW + 22, 544), pt(innerAnkleHW + 7, 548), pt(innerAnkleHW + 2, 539)),
+        C(pt(innerAnkleHW, 527), pt(innerAnkleHW, 520), pt(innerAnkleHW, ANKLE_Y)),
+        C(pt(innerAnkleHW, 487), pt(innerKneeHW, 456), pt(innerKneeHW, KNEE_Y)),
+        C(pt(innerKneeHW, 403), pt(crotchGap + 4, 367), pt(crotchGap, CROTCH_Y + 8)),
+        C(pt(crotchGap - 3, CROTCH_Y + 18), pt(7, CROTCH_Y + 20), pt(0, CROTCH_Y + 15)),
+        C(pt(-7, CROTCH_Y + 20), pt(-crotchGap + 3, CROTCH_Y + 18), pt(-crotchGap, CROTCH_Y + 8)),
+        C(pt(-crotchGap - 4, 367), pt(-innerKneeHW, 403), pt(-innerKneeHW, KNEE_Y)),
+        C(pt(-innerKneeHW, 456), pt(-innerAnkleHW, 487), pt(-innerAnkleHW, ANKLE_Y)),
+        C(pt(-innerAnkleHW, 520), pt(-innerAnkleHW, 527), pt(-innerAnkleHW - 2, 539)),
+        C(pt(-innerAnkleHW - 7, 548), pt(-ankleHW - 22, 544), pt(-ankleHW - 19, 539)),
+        C(pt(-ankleHW - 14, 533), pt(-ankleHW - 2, 525), pt(-ankleHW, ANKLE_Y)),
+        C(pt(-ankleHW - 1, 495), pt(-kneeHW + 2, 462), pt(-kneeHW, KNEE_Y)),
+        C(pt(-kneeHW - 3, 430), pt(-outerThigh + 2, 416), pt(-outerThigh, 394)),
+        C(pt(-outerThigh - 6, 361), pt(-hHW - 1, 313), pt(-hHW, HIP_Y)),
+        C(pt(-hHW - 5, 278), pt(-wHW - 7, 256), pt(-wHW, WAIST_Y)),
+        C(pt(-wHW - 7, 220), pt(-uHW - 5, 204), pt(-uHW, UNDERBUST_Y)),
+        C(pt(-uHW - 2, 180), pt(-bHW - 1, 168), pt(-bHW, BUST_Y)),
+        C(pt(-bHW - 7, BUST_Y - 5), pt(-armholeHW + 7, 142), pt(-armholeHW, ARMPIT_Y)),
+        C(pt(-armholeHW - 5, 125), pt(-sHW - 1, 112), pt(-sHW, SHOULDER_Y)),
+        C(pt(-sHW + 4, 91), pt(-NECK_HW - 14, 78), pt(-NECK_HW, NECK_TOP_Y)),
+        'Z',
+      ].join(' ');
+
+      const hairBack = 'M 124 72 C 116 57 115 38 122 24 C 130 9 146 7 158 12 C 176 18 184 38 178 57 C 176 70 171 81 163 88 L 160 68 C 169 48 167 26 151 22 C 133 19 127 37 132 57 L 137 79 Z';
+      const fringe = 'M 128 47 C 128 28 138 17 151 18 C 165 20 171 34 168 49 C 162 43 158 40 153 38 C 147 45 138 49 128 47 Z';
+      const collarbone = `M ${pt(-NECK_HW + 1, 83)} C ${pt(-22, 88)} ${pt(-34, 91)} ${pt(-sHW + 6, 99)} M ${pt(NECK_HW - 1, 83)} C ${pt(22, 88)} ${pt(34, 91)} ${pt(sHW - 6, 99)}`;
+      const underbustLine = `M ${pt(-uHW + 5, UNDERBUST_Y - 1)} C ${pt(-uHW / 3, UNDERBUST_Y + 5)} ${pt(uHW / 3, UNDERBUST_Y + 5)} ${pt(uHW - 5, UNDERBUST_Y - 1)}`;
+
+      document.getElementById('bodySvg').innerHTML = `
+        <defs>
+          <linearGradient id="body-skin" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stop-color="#fff9fa"/>
+            <stop offset=".55" stop-color="#f7e7e8"/>
+            <stop offset="1" stop-color="#eed5d9"/>
+          </linearGradient>
+        </defs>
+        <path d="${armPath(-1)}" fill="${fill}" stroke="${stroke}" stroke-width="1.35" stroke-linejoin="round"/>
+        <path d="${armPath(1)}" fill="${fill}" stroke="${stroke}" stroke-width="1.35" stroke-linejoin="round"/>
+        <path d="${body}" fill="${fill}" stroke="${stroke}" stroke-width="1.45" stroke-linejoin="round"/>
+        <path d="${hairBack}" fill="#5a3d43" opacity=".92"/>
+        <ellipse cx="${CX}" cy="42" rx="21" ry="27" fill="${fill}" stroke="${stroke}" stroke-width="1.35"/>
+        <path d="${fringe}" fill="#5a3d43"/>
+        <path d="${collarbone}" fill="none" stroke="#b98591" stroke-width=".8" stroke-linecap="round" opacity=".7"/>
+        <path d="${underbustLine}" fill="none" stroke="#b98591" stroke-width=".75" stroke-linecap="round" opacity=".65"/>
+      `;
+    }
+
     // ── Reactive inputs ──────────────────────────────────────────────
     function redraw() {
       const bust      = parseFloat(document.getElementById('bust').value);
@@ -363,8 +452,8 @@
     <div class="footer-inner">
       <div class="footer-col">
         <p class="footer-heading">Company</p>
-        <a href="#">About Us</a>
-        <a href="#">Contact</a>
+        <a href="about.html">About Us</a>
+        <a href="contact.html">Contact</a>
       </div>
       <div class="footer-col">
         <p class="footer-heading">Shopping</p>

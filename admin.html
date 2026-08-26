@@ -201,6 +201,19 @@
     .img-item img { width: 52px; height: 65px; object-fit: cover; flex-shrink: 0; }
     .img-item-label { font-size: 11px; color: #888; flex: 1; }
 
+    .swatch-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+    .swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #e5e5e5;
+              padding: 0; cursor: pointer; outline: none; position: relative;
+              transition: border-color 0.15s, transform 0.15s; }
+    .swatch:hover { transform: scale(1.08); }
+    .swatch.selected { border-color: #c9607a; box-shadow: 0 0 0 2px #ffffff inset; }
+    /* Tick only on the chosen swatches; currentColor flips to stay readable on
+       very light fills, which the inline style sets per swatch. */
+    .swatch.selected::after { content: '¹3'; position: absolute; inset: 0;
+              display: flex; align-items: center; justify-content: center;
+              font-size: 14px; line-height: 1; color: currentColor; }
+    .swatch-summary { font-size: 11px; color: #888; }
+
     .inquiry-row { padding: 14px; border: 1px solid #e5e5e5; margin-bottom: 8px; }
     .inquiry-row-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
     .inquiry-contact { font-size: 13px; font-weight: 500; }
@@ -250,6 +263,11 @@
         </select>
       </div>
       <div class="field">
+        <label>Colors <span style="font-weight:400;color:#aaa">(optional — pick any)</span></label>
+        <div class="swatch-grid" id="productColorGrid"></div>
+        <div class="swatch-summary" id="productColorSummary">No colors selected.</div>
+      </div>
+      <div class="field">
         <label>Description</label>
         <textarea id="productDescription" rows="4" placeholder="Optional product description..."></textarea>
       </div>
@@ -295,6 +313,11 @@
           <option value="dress">Dress</option>
           <option value="miraz">Miraz</option>
         </select>
+      </div>
+      <div class="field">
+        <label>Colors <span style="font-weight:400;color:#aaa">(optional — pick any)</span></label>
+        <div class="swatch-grid" id="editColorGrid"></div>
+        <div class="swatch-summary" id="editColorSummary">No colors selected.</div>
       </div>
       <div class="field">
         <label>Description</label>
@@ -372,6 +395,7 @@
     </div>
   </div>
 
+  <script src="colors.js"></script>
   <script>
     // ── Auth gate ──
     // Every admin action hits a requireAdmin-protected route. A 401 anywhere
@@ -497,6 +521,63 @@
       document.getElementById('productImageUrl').value = '';
     });
 
+    // ── Colour swatch picker ──
+    // Drives the create and edit forms from the shared COLOR_PALETTE. Products
+    // store colour NAMES; the hex is only what the circle is painted with.
+
+    function makeColorPicker(gridId, summaryId) {
+      const grid    = document.getElementById(gridId);
+      const summary = document.getElementById(summaryId);
+      let   selected = [];
+
+      grid.innerHTML = COLOR_PALETTE.map(c => `
+        <button type="button" class="swatch" data-name="${c.name}" title="${c.name}"
+                aria-label="${c.name}" aria-pressed="false"
+                style="background:${c.hex};color:${colorInk(c.hex)};"></button>
+      `).join('');
+
+      function render() {
+        grid.querySelectorAll('.swatch').forEach(btn => {
+          const on = selected.includes(btn.dataset.name);
+          btn.classList.toggle('selected', on);
+          btn.setAttribute('aria-pressed', String(on));
+        });
+        summary.textContent = selected.length ? selected.join(', ') : 'No colors selected.';
+      }
+
+      grid.addEventListener('click', e => {
+        const btn = e.target.closest('.swatch');
+        if (!btn) return;
+        const name = btn.dataset.name;
+        selected = selected.includes(name)
+          ? selected.filter(n => n !== name)
+          // Re-derive from palette order so the product page always lists the
+          // colours in the same sequence, whatever order they were clicked in.
+          : COLOR_NAMES.filter(n => n === name || selected.includes(n));
+        render();
+      });
+
+      render();
+
+      return {
+        get: () => [...selected],
+        set: names => {
+          const list = Array.isArray(names) ? names : [];
+          // Names outside the palette are kept (they just have no circle to
+          // click), so editing a product never silently drops a colour.
+          selected = [
+            ...COLOR_NAMES.filter(n => list.includes(n)),
+            ...list.filter(n => !COLOR_NAMES.includes(n)),
+          ];
+          render();
+        },
+        clear: () => { selected = []; render(); },
+      };
+    }
+
+    const productColors = makeColorPicker('productColorGrid', 'productColorSummary');
+    const editColors    = makeColorPicker('editColorGrid', 'editColorSummary');
+
     // Create product
     createBtn.addEventListener('click', async () => {
       const name        = document.getElementById('productName').value.trim();
@@ -511,7 +592,7 @@
       const r    = await fetch('/api/products', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, price, images: productImages, type, description }),
+        body:    JSON.stringify({ name, price, images: productImages, colors: productColors.get(), type, description }),
       });
       const data = await r.json();
 
@@ -521,6 +602,7 @@
         document.getElementById('productPrice').value = '';
         productImages = [];
         renderProductImages();
+        productColors.clear();
         document.getElementById('productDescription').value = '';
         loadProducts();
       } else {
@@ -544,7 +626,7 @@
           <img src="${p.image}" alt="${p.name}" />
           <div class="product-row-info">
             <div class="product-row-name">${p.name}${p.active ? '' : '<span class="badge-inactive">Hidden</span>'}</div>
-            <div class="product-row-price">€${p.price.toFixed(2)} · ${p.type}${p.images && p.images.length > 1 ? ` · ${p.images.length} images` : ''}</div>
+            <div class="product-row-price">€${p.price.toFixed(2)} · ${p.type}${p.images && p.images.length > 1 ? ` · ${p.images.length} images` : ''}${p.colors && p.colors.length ? ` · ${p.colors.length} colors` : ''}</div>
             <div class="product-row-id">${p.id}</div>
           </div>
           <div style="display:flex;gap:8px;">
@@ -604,6 +686,7 @@
       document.getElementById('editType').value        = product.type;
       document.getElementById('editDescription').value = product.description || '';
       document.getElementById('editActive').checked    = product.active;
+      editColors.set(product.colors);
       document.getElementById('editStatus').style.display = 'none';
       renderEditImages();
       const card = document.getElementById('editCard');
@@ -669,7 +752,7 @@
       const r = await fetch(`/api/products/${editingId}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, price, images: editImages, type, description, active }),
+        body:    JSON.stringify({ name, price, images: editImages, colors: editColors.get(), type, description, active }),
       });
       const data = await r.json();
 

@@ -55,14 +55,9 @@
       <p class="panel-price" id="panelPrice"></p>
       <p class="panel-description" id="panelDescription"></p>
 
-      <div class="panel-section">
-        <p class="panel-label">Color — <span class="panel-label-value">Sand</span></p>
-        <div class="color-options">
-          <button class="color-swatch selected" style="background:#c9b99a;" aria-label="Sand"></button>
-          <button class="color-swatch" style="background:#2b2b2b;" aria-label="Charcoal"></button>
-          <button class="color-swatch" style="background:#e8e0d5;" aria-label="Cream"></button>
-          <button class="color-swatch" style="background:#7a8c7e;" aria-label="Sage"></button>
-        </div>
+      <div class="panel-section" id="colorSection" hidden>
+        <p class="panel-label">Color — <span class="panel-label-value"></span></p>
+        <div class="color-options" id="colorOptions"></div>
       </div>
 
       <div class="panel-section">
@@ -74,7 +69,7 @@
           <button class="size-btn">L</button>
           <button class="size-btn">XL</button>
         </div>
-        <a href="#" class="find-size-link" id="findSizeBtn">Find your size</a>
+        <a href="#" class="find-size-link" id="findSizeBtn">Find your fit</a>
       </div>
 
       <div class="panel-actions">
@@ -90,7 +85,7 @@
 
   </div>
 
-  <!-- Size Guide Modal -->
+  <!-- Fit Finder Modal -->
   <div class="modal-overlay" id="sizeModal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
 
@@ -100,10 +95,35 @@
         </svg>
       </button>
 
-      <h2 class="modal-title" id="modalTitle">Size Guide (cm)</h2>
+      <h2 class="modal-title" id="modalTitle">Find your fit</h2>
+      <p class="fit-finder-intro">Enter your body measurements in centimetres. We’ll compare them with MARTA’s standard size guide and suggest the closest size.</p>
 
-      <div class="size-guide-table-wrap">
-        <table class="size-guide-table">
+      <div class="fit-input-grid">
+        <label class="fit-field" for="fitBust">Bust <span>cm</span>
+          <input id="fitBust" type="number" inputmode="decimal" min="50" max="200" step="0.5" placeholder="e.g. 90" />
+        </label>
+        <label class="fit-field" for="fitWaist">Waist <span>cm</span>
+          <input id="fitWaist" type="number" inputmode="decimal" min="40" max="180" step="0.5" placeholder="e.g. 68" />
+        </label>
+        <label class="fit-field" for="fitHips">Hips <span>cm</span>
+          <input id="fitHips" type="number" inputmode="decimal" min="50" max="200" step="0.5" placeholder="e.g. 95" />
+        </label>
+      </div>
+      <button class="fit-submit" id="fitSubmit" type="button">Find my size</button>
+      <p class="fit-error" id="fitError" role="alert" hidden></p>
+
+      <section class="fit-result" id="fitResult" aria-live="polite" hidden>
+        <p class="fit-result-kicker">Your recommendation</p>
+        <p class="fit-result-size" id="fitResultSize"></p>
+        <p class="fit-result-copy" id="fitResultCopy"></p>
+        <div class="fit-result-breakdown" id="fitResultBreakdown"></div>
+      </section>
+      <p class="fit-disclaimer">Size guidance is based on body measurements and is not a guarantee of fit. Fabric, cut, and personal preference can affect the final fit.</p>
+
+      <details class="fit-size-guide">
+        <summary>View the standard size guide</summary>
+        <div class="size-guide-table-wrap">
+          <table class="size-guide-table">
           <thead>
             <tr>
               <th>Size</th>
@@ -164,8 +184,9 @@
               <td>94 - 105</td>
             </tr>
           </tbody>
-        </table>
-      </div>
+          </table>
+        </div>
+      </details>
 
     </div>
   </div>
@@ -174,26 +195,99 @@
     const findSizeBtn = document.getElementById('findSizeBtn');
     const sizeModal   = document.getElementById('sizeModal');
     const modalClose  = document.getElementById('modalClose');
+    const fitError    = document.getElementById('fitError');
+    const fitResult   = document.getElementById('fitResult');
+
+    const FIT_SIZE_CHART = [
+      { size: 'XS', bust: [83, 86], waist: [62, 65], hips: [90, 93] },
+      { size: 'S',  bust: [87, 90], waist: [66, 69], hips: [94, 97] },
+      { size: 'M',  bust: [91, 94], waist: [70, 73], hips: [98, 101] },
+      { size: 'L',  bust: [95, 98], waist: [74, 77], hips: [102, 105] },
+      { size: 'XL', bust: [99, 102], waist: [78, 81], hips: [106, 109] },
+    ];
+
+    function closeFitFinder() {
+      sizeModal.classList.remove('open');
+      sizeModal.setAttribute('aria-hidden', 'true');
+    }
 
     findSizeBtn.addEventListener('click', e => {
       e.preventDefault();
       sizeModal.classList.add('open');
+      sizeModal.setAttribute('aria-hidden', 'false');
+      document.getElementById('fitBust').focus();
     });
 
-    modalClose.addEventListener('click', () => sizeModal.classList.remove('open'));
+    modalClose.addEventListener('click', closeFitFinder);
 
     sizeModal.addEventListener('click', e => {
-      if (e.target === sizeModal) sizeModal.classList.remove('open');
+      if (e.target === sizeModal) closeFitFinder();
     });
 
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') sizeModal.classList.remove('open');
+      if (e.key === 'Escape') closeFitFinder();
+    });
+
+    function distanceToRange(value, range) {
+      if (value < range[0]) return range[0] - value;
+      if (value > range[1]) return value - range[1];
+      return 0;
+    }
+
+    function fitLabel(value, range) {
+      const delta = distanceToRange(value, range);
+      if (delta === 0) return { label: 'Within range', state: 'good' };
+      if (value < range[0]) return { label: `${delta.toFixed(1)} cm below range`, state: 'roomy' };
+      return { label: `${delta.toFixed(1)} cm above range`, state: 'close' };
+    }
+
+    document.getElementById('fitSubmit').addEventListener('click', () => {
+      const measurements = {
+        bust: parseFloat(document.getElementById('fitBust').value),
+        waist: parseFloat(document.getElementById('fitWaist').value),
+        hips: parseFloat(document.getElementById('fitHips').value),
+      };
+
+      const invalid = !Number.isFinite(measurements.bust) || measurements.bust < 50 || measurements.bust > 200
+        || !Number.isFinite(measurements.waist) || measurements.waist < 40 || measurements.waist > 180
+        || !Number.isFinite(measurements.hips) || measurements.hips < 50 || measurements.hips > 200;
+      if (invalid) {
+        fitError.textContent = 'Enter measurements within the ranges shown for bust, waist, and hips.';
+        fitError.hidden = false;
+        fitResult.hidden = true;
+        return;
+      }
+
+      fitError.hidden = true;
+      const scored = FIT_SIZE_CHART.map(entry => ({
+        ...entry,
+        score: Object.entries(measurements).reduce((total, [key, value]) => total + Math.pow(distanceToRange(value, entry[key]), 2), 0),
+      })).sort((a, b) => a.score - b.score);
+      const recommendation = scored[0];
+      const exactMatch = recommendation.score === 0;
+      const rows = Object.entries(measurements).map(([key, value]) => {
+        const outcome = fitLabel(value, recommendation[key]);
+        const name = key.charAt(0).toUpperCase() + key.slice(1);
+        return `<div class="fit-result-row"><span>${name}</span><span class="fit-state ${outcome.state}">${outcome.label}</span></div>`;
+      }).join('');
+
+      document.getElementById('fitResultSize').textContent = recommendation.size;
+      document.getElementById('fitResultCopy').textContent = exactMatch
+        ? `${recommendation.size} is the best match across your measurements.`
+        : `${recommendation.size} is the closest standard size. Review the areas marked outside the range before ordering.`;
+      document.getElementById('fitResultBreakdown').innerHTML = rows;
+      fitResult.hidden = false;
+
+      const recommendedButton = [...document.querySelectorAll('.size-btn')]
+        .find(button => button.textContent.trim() === recommendation.size);
+      if (recommendedButton) recommendedButton.click();
     });
   </script>
 
   <div id="toast" class="toast"></div>
 
   <script src="store.js"></script>
+  <script src="colors.js"></script>
   <script>
     let selectedColor = 'Sand';
     let selectedSize  = 'S';
@@ -202,6 +296,25 @@
     const wishlistLabel = wishlistBtn.querySelector('.btn-wishlist-label');
 
     let PRODUCT = null;
+
+    // Colours live on the product record. Rows created before colours existed
+    // — and any product left blank in admin — fall back to the original four,
+    // so the picker is never empty and add-to-cart always has a value to send.
+    const DEFAULT_COLORS = ['Sand', 'Charcoal', 'Cream', 'Sage'];
+
+    const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    function renderColors(colors) {
+      const list = (colors && colors.length) ? colors : DEFAULT_COLORS;
+      document.getElementById('colorOptions').innerHTML = list.map((name, i) => `
+        <button class="color-swatch${i === 0 ? ' selected' : ''}" style="background:${esc(colorHex(name))};"
+                aria-label="${esc(name)}" aria-pressed="${i === 0}"></button>
+      `).join('');
+      selectedColor = list[0];
+      document.querySelector('.panel-label-value').textContent = selectedColor;
+      document.getElementById('colorSection').hidden = false;
+    }
 
     async function init() {
       // Kick off the config fetch up front so the cart button can reveal
@@ -223,8 +336,10 @@
           document.getElementById('productImages').innerHTML = imgs
             .map((url, i) => `<img src="${cloudinaryUrl(url, 1200)}" srcset="${cloudinarySrcset(url, [400, 600, 800, 1200, 1600])}" sizes="(max-width: 900px) 100vw, 50vw" alt="${data.name}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} />`)
             .join('');
+          renderColors(data.colors);
         }
       }
+      if (!PRODUCT) renderColors([]);
 
       // Button starts hidden in the markup; only reveal it if payments are on.
       // This avoids the flash of a visible "Add to Cart" before config loads.
@@ -244,14 +359,19 @@
       wishlistLabel.textContent = item ? 'In Wishlist' : 'Add to Wishlist';
     }
 
-    document.querySelectorAll('.color-swatch').forEach(swatch => {
-      swatch.addEventListener('click', async () => {
-        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-        swatch.classList.add('selected');
-        selectedColor = swatch.getAttribute('aria-label');
-        document.querySelector('.panel-label-value').textContent = selectedColor;
-        await syncWishlistBtn();
+    // Delegated: the swatches are re-rendered whenever a product loads.
+    document.getElementById('colorOptions').addEventListener('click', async e => {
+      const swatch = e.target.closest('.color-swatch');
+      if (!swatch) return;
+      document.querySelectorAll('.color-swatch').forEach(s => {
+        s.classList.remove('selected');
+        s.setAttribute('aria-pressed', 'false');
       });
+      swatch.classList.add('selected');
+      swatch.setAttribute('aria-pressed', 'true');
+      selectedColor = swatch.getAttribute('aria-label');
+      document.querySelector('.panel-label-value').textContent = selectedColor;
+      await syncWishlistBtn();
     });
 
     document.querySelectorAll('.size-btn').forEach(btn => {
