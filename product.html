@@ -336,7 +336,9 @@
           PRODUCT = { id: data.id, name: data.name, price: data.price, image: data.image };
           document.title = `${data.name} — ZiraFiona`;
           document.getElementById('panelName').textContent  = data.name;
-          // document.getElementById('panelPrice').textContent = `€${data.price.toFixed(2)}`;
+          const priceEl = document.getElementById('panelPrice');
+          priceEl.textContent = formatPrice(data.price);
+          priceEl.hidden = !priceEl.textContent;
           const descEl = document.getElementById('panelDescription');
           descEl.textContent = data.description || '';
           descEl.hidden = !data.description;

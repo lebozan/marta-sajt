@@ -11,6 +11,17 @@ function cloudinarySrcset(url, widths) {
   return widths.map(w => `${cloudinaryUrl(url, w)} ${w}w`).join(', ');
 }
 
+// Prices show only once they are set. A product at 0 is one whose price has
+// not been decided yet — the seeded drafts are all 0 — and rendering "€0.00"
+// would read as free. Returns '' so callers can drop the element entirely.
+function formatPrice(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+  // Test the rounded value, not the raw one: 0.004 is > 0 but renders as
+  // "€0.00", which is the very thing this guard exists to avoid.
+  const cents = Math.round(value * 100);
+  return cents > 0 ? `€${(cents / 100).toFixed(2)}` : '';
+}
+
 // How long a product keeps its "New" badge. The homepage always shows the
 // newest four regardless of age — a strict cutoff would empty the row (and
 // hide the section) in any month nothing was added. The badge is what keeps

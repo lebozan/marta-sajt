@@ -95,7 +95,7 @@
           </a>
           <a href="product.html?id=${p.id}" class="product-info">
             <span class="product-name">${p.name}</span>
-            <span class="product-price">€${p.price.toFixed(2)}</span>
+            <span class="product-price">${formatPrice(p.price)}</span>
           </a>
         </article>
       `).join('');

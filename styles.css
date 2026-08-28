@@ -2079,8 +2079,6 @@ main {
 }
 
 /* ── Payments disabled ── */
-body.payments-off .product-price,
-body.payments-off .panel-price,
-body.payments-off .search-result-price {
-  display: none;
-}
+/* Prices are no longer tied to checkout being on: a price is shown whenever
+   the product has one (see formatPrice in store.js). Only the buying controls
+   depend on ENABLE_PAYMENTS. */
