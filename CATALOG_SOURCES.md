@@ -14,4 +14,17 @@ The draft products created by `npm run seed` use free Unsplash photographs. The 
 | Canvas Tote Bag | Tereza Rubá | https://unsplash.com/photos/black-leather-tote-bag-TK-rrTgYqzo |
 | Bucket Hat | Aedrian Salazar | https://unsplash.com/photos/woman-in-white-red-and-blue-shirt-wearing-green-hat-RlnvkAjO7mM |
 
+## Carousel GIFs
+
+The three hero slides are animated GIFs rendered locally with ffmpeg — a slow
+Ken Burns move over photographs already listed above — then uploaded to
+Cloudinary. `cloudinaryUrl()` delivers them as animated WebP (`f_webp`), which
+is roughly 80-97% smaller than the source GIF.
+
+| Slide | Built from | Photographer |
+| --- | --- | --- |
+| The Dresses Edit | `emfDaSTC0rM` | Mihaela Claudia Puscas |
+| The Miraz Collection | `f1nYe7yTpCA` | Alexander Mass |
+| Finishing Touches | `RlnvkAjO7mM` | Aedrian Salazar |
+
 Source pages state that these photographs are available under the Unsplash License. Keep this record, and replace each image with ZiraFiona-owned product photography before representing it as exact sale inventory.

@@ -157,9 +157,14 @@
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
+      // Carousel images are deliberately NOT loading="lazy". A lazy slide only
+      // begins downloading as it slides into view, which with animated art
+      // shows a blank panel mid-transition. The first slide is high priority;
+      // the rest fetch at low priority so they are ready before their turn
+      // without competing with the initial render.
       track.innerHTML = slides.map((s, i) => `
         <div class="carousel-slide">
-          <img src="${esc(cloudinaryUrl(s.image, 1600))}" srcset="${esc(cloudinarySrcset(s.image, [640, 960, 1280, 1600, 2000]))}" sizes="100vw" alt="${esc(s.eyebrow)}" class="carousel-img" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} />
+          <img src="${esc(cloudinaryUrl(s.image, 1600))}" srcset="${esc(cloudinarySrcset(s.image, [640, 960, 1280, 1600, 2000]))}" sizes="100vw" alt="${esc(s.eyebrow)}" class="carousel-img" ${i === 0 ? 'fetchpriority="high"' : 'fetchpriority="low"'} />
           <div class="carousel-caption">
             <p class="carousel-eyebrow">${esc(s.eyebrow)}</p>
             <h2 class="carousel-heading">${esc(s.heading).replace(/\n/g, '<br>')}</h2>

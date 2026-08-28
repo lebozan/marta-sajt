@@ -1,6 +1,12 @@
 function cloudinaryUrl(url, width) {
   if (!url || !url.includes('/upload/')) return url;
-  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width}/`);
+  // c_limit never upscales. Cloudinary rejects an upscale of an animated asset
+  // outright (HTTP 400 — a broken hero image), and for stills it only wasted
+  // bytes enlarging a small source.
+  // f_auto leaves an animated GIF as a GIF; f_webp turns it into an animated
+  // WebP roughly 80% smaller, which matters for a full-bleed hero.
+  const format = /\.gif($|\?)/i.test(url) ? 'f_webp' : 'f_auto';
+  return url.replace('/upload/', `/upload/${format},q_auto,w_${width},c_limit/`);
 }
 
 // Build a responsive srcset (`url widthw, ...`) so browsers download an

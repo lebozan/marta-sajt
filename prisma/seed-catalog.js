@@ -97,6 +97,33 @@ const products = [
   },
 ];
 
+// Hero carousel. One slide per product type, each linking to its own page.
+// The images are animated GIFs rendered from the catalogue photography with a
+// slow Ken Burns move; cloudinaryUrl() delivers them as animated WebP.
+const slides = [
+  {
+    heading:  'The Dresses\nEdit',
+    eyebrow:  'New Season',
+    ctaLabel: 'Shop Dresses',
+    ctaLink:  'dresses.html',
+    image:    'https://res.cloudinary.com/dkcha41gs/image/upload/v1787940435/marta/b6qn1l8beg3i2jkluakw.gif',
+  },
+  {
+    heading:  'The Miraz\nCollection',
+    eyebrow:  'Bridal',
+    ctaLabel: 'Explore Miraz',
+    ctaLink:  'miraz.html',
+    image:    'https://res.cloudinary.com/dkcha41gs/image/upload/v1787940530/marta/zhgtncilocpsgpl7lqe4.gif',
+  },
+  {
+    heading:  'Finishing\nTouches',
+    eyebrow:  'Accessories',
+    ctaLabel: 'Discover',
+    ctaLink:  'accessories.html',
+    image:    'https://res.cloudinary.com/dkcha41gs/image/upload/v1787940533/marta/tfgsvwuqwve7edbe446m.gif',
+  },
+];
+
 async function main() {
   let added = 0;
   let skipped = 0;
@@ -117,7 +144,21 @@ async function main() {
     added++;
   }
 
+  let slidesAdded = 0;
+  let slidesSkipped = 0;
+  for (let i = 0; i < slides.length; i++) {
+    const slide = slides[i];
+    const exists = await prisma.carouselSlide.findFirst({ where: { heading: slide.heading } });
+    if (exists) {
+      slidesSkipped++;
+      continue;
+    }
+    await prisma.carouselSlide.create({ data: { ...slide, position: i, active: true } });
+    slidesAdded++;
+  }
+
   console.log(`Catalog seed complete: ${added} added, ${skipped} already present.`);
+  console.log(`Carousel seed complete: ${slidesAdded} added, ${slidesSkipped} already present.`);
 }
 
 main()
