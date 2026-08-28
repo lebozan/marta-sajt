@@ -123,7 +123,8 @@ const LIMITS = { name: 200, description: 5000, url: 2000, text: 300, message: 30
 
 const isStr       = v => typeof v === 'string';
 const nonEmpty    = v => isStr(v) && v.trim().length > 0;
-const validType   = v => v === 'dress' || v === 'miraz';
+const PRODUCT_TYPES = ['dress', 'miraz', 'accessories'];
+const validType   = v => PRODUCT_TYPES.includes(v);
 const validPrice  = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1_000_000;
 const validImages = v => Array.isArray(v) && v.length > 0 && v.length <= LIMITS.images
   && v.every(u => nonEmpty(u) && u.length <= LIMITS.url);
@@ -200,7 +201,7 @@ app.post('/api/products', requireAdmin, async (req, res) => {
   const { name, price, images = [], colors = [], sizes = [], type = 'dress', description = '' } = req.body;
   if (!nonEmpty(name) || name.length > LIMITS.name) return res.status(400).json({ error: 'Name is required (max 200 chars)' });
   if (!validPrice(price))                           return res.status(400).json({ error: 'Price must be a number between 0 and 1,000,000' });
-  if (!validType(type))                             return res.status(400).json({ error: 'Type must be "dress" or "miraz"' });
+  if (!validType(type))                             return res.status(400).json({ error: `Type must be one of: ${PRODUCT_TYPES.join(', ')}` });
   if (!isStr(description) || description.length > LIMITS.description) return res.status(400).json({ error: 'Description too long' });
   if (!validImages(images))                         return res.status(400).json({ error: 'At least one valid image required' });
   if (!validColors(colors))                         return res.status(400).json({ error: 'Invalid colors' });
@@ -712,7 +713,7 @@ app.get('/sitemap.xml', async (req, res, next) => {
       where: { active: true },
       select: { id: true, updatedAt: true },
     });
-    const staticPaths = ['/', '/dresses.html', '/miraz.html'];
+    const staticPaths = ['/', '/dresses.html', '/miraz.html', '/accessories.html'];
     const urls = [
       ...staticPaths.map(p => `  <url><loc>${SITE_URL}${p}</loc></url>`),
       ...products.map(p =>

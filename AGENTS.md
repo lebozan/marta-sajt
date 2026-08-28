@@ -27,7 +27,7 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 **Key endpoints:**
 - `GET /api/config` — returns `{ paymentsEnabled }` driven by `ENABLE_PAYMENTS` env var
 - `POST /api/admin/login` / `logout` — set/clear the admin cookie; `GET /api/admin/status` — `{ authenticated, configured }`
-- `GET /api/products` — accepts `?type=dress|miraz` and `?all=true` (admin-only, bypasses active filter)
+- `GET /api/products` — accepts `?type=dress|miraz|accessories` and `?all=true` (admin-only, bypasses active filter). Non-string query values are rejected with 400 by `queryStr` before reaching Prisma
 - `GET/POST/PATCH/DELETE /api/products/:id` — product CRUD; PATCH accepts `name`, `price`, `type`, `description`, `images`, `colors`, `sizes`, `active`
 - `GET /api/products/search?q=` — name search, returns up to 3 results, active-only
 - `GET/POST/PATCH/DELETE /api/cart` — cart management; unique constraint on `(sessionId, productId, color, size)`, adding same variant increments quantity. `POST` takes only `{ id, color, size }` — `name`/`price`/`image` are snapshotted from the DB product server-side (client-sent values are ignored to prevent price tampering). `PATCH` `delta` must be `1` or `-1`
@@ -52,7 +52,7 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 Schema at `prisma/schema.prisma`. After any schema change, run `npm run db:push`.
 
 Models and notable fields:
-- **Product** — `name`, `description`, `price`, `image` (primary), `images[]`, `colors[]` (colour *names* from the shared palette; may be empty), `sizes[]` (size labels; may be empty), `type` (`dress`|`miraz`), `active` (soft hide), `createdAt`, `updatedAt`
+- **Product** — `name`, `description`, `price`, `image` (primary), `images[]`, `colors[]` (colour *names* from the shared palette; may be empty), `sizes[]` (size labels; may be empty), `type` (`dress`|`miraz`|`accessories`, validated against `PRODUCT_TYPES` in `server.js`), `active` (soft hide), `createdAt`, `updatedAt`
 - **CartItem** — denormalised snapshot of product data at add-time (`name`, `price`, `image`); unique on `(sessionId, productId, color, size)`
 - **WishlistItem** — same denormalised shape as CartItem, no quantity
 - **CarouselSlide** — `image`, `eyebrow`, `heading`, `ctaLabel`, `ctaLink`, `position` (sort order), `active` (soft hide)
@@ -68,7 +68,7 @@ Models and notable fields:
 
 ### Page structure
 - `index.html` — homepage with hero carousel (fetches `/api/carousel`)
-- `dresses.html` / `miraz.html` — product grids with breadcrumb (`Home / Dresses` or `Home / Miraz`); fetch `/api/products?type=dress|miraz`
+- `dresses.html` / `miraz.html` / `accessories.html` — product grids with breadcrumb and an `<h1>` + item count; fetch `/api/products?type=<type>`. Adding a category means: a new page, `PRODUCT_TYPES` in `server.js`, the sitemap's `staticPaths`, both `<select>`s in `admin.html`, the nav link in every page's header, and a homepage collection tile
 - `product.html` — detail page; reads `?id=` param, shows multi-image gallery, color/size selectors, size guide modal, add-to-cart, add-to-wishlist. Description is hidden when empty. Colour swatches and size buttons are rendered from the product's `colors[]` / `sizes[]` (first of each preselected); a product with none set falls back to `DEFAULT_COLORS` / `DEFAULT_SIZES` so the pickers are never empty and add-to-cart always has values to send.
 - `cart.html` — loads PayPal JS SDK, handles full checkout flow
 - `wishlist.html` — wishlist display + inquiry form
@@ -76,6 +76,8 @@ Models and notable fields:
 
 ### Styles (`styles.css`)
 Single flat stylesheet. No CSS variables — brand colours are repeated inline: `#c9607a` (rose), `#fdf6f8` (pale pink background), `#111111` (text). Font: Inter via Google Fonts.
+
+**Navbar:** category links flow from the left, the logo is `position: absolute` at `left: 50%` so it stays centred however many categories exist, and `.nav-icons` is pinned right. Under 768px the header wraps to two rows (logo + icons, then the links) and is a fixed 104px tall — `.search-panel`'s `top` and `.hero-carousel`'s height offset against that number, so changing it means changing them too.
 
 ## Environment Variables (`.env`)
 ```

@@ -34,7 +34,9 @@ body {
   border-bottom: 1px solid #f2d0d8;
   display: flex;
   align-items: center;
-  justify-content: center;
+  /* Links flow from the left; the logo is taken out of flow and pinned to the
+     centre so it stays optically centred however many categories exist. */
+  justify-content: flex-start;
   padding: 0 48px;
   height: 100px;
 }
@@ -74,6 +76,10 @@ body {
 .nav-logo {
   display: flex;
   align-items: center;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .nav-logo-img {
@@ -320,7 +326,7 @@ body {
 
 .collections-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 3px;
 }
 
@@ -1855,22 +1861,30 @@ main {
 
 @media (max-width: 768px) {
   /* Navbar */
+  /* Measured: three links (~176px) plus the centred logo (~88px) plus the
+     icons (~88px) overrun a 390px viewport and the logo lands on top of the
+     links. So the header wraps to two rows on phones — logo and icons, then
+     the categories underneath. Height is fixed because the sticky search
+     panel, hero and product gallery all offset against it. */
   .navbar {
     padding: 0 16px;
-    height: 64px;
-    justify-content: space-between;
+    height: 104px;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    row-gap: 8px;
     position: relative;
   }
 
-  .nav-center {
-    gap: 12px;
+  .nav-logo {
+    position: static;
+    transform: none;
   }
 
-  .nav-center .nav-logo {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+  .nav-center {
+    flex-basis: 100%;
+    justify-content: center;
+    gap: 20px;
   }
 
   .nav-center .nav-link {
@@ -1881,7 +1895,7 @@ main {
   }
 
   .nav-logo-img {
-    height: 36px;
+    height: 34px;
   }
 
   .page-title {
@@ -1893,20 +1907,22 @@ main {
   }
 
   .nav-icons {
-    position: static;
+    position: absolute;
+    right: 16px;
+    top: 22px;
     gap: 14px;
     z-index: 1;
   }
 
   /* Search panel */
   .search-panel {
-    top: 64px;
+    top: 104px;
     padding: 14px 16px;
   }
 
   /* Carousel */
   .hero-carousel {
-    height: calc(100vh - 64px);
+    height: calc(100vh - 104px);
   }
 
   .carousel-caption {

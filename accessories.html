@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Miraz — ZiraFiona</title>
-  <meta name="description" content="Explore the ZiraFiona Miraz collection — elegant, curated women’s fashion." />
-  <link rel="canonical" href="https://zirafiona.up.railway.app/miraz.html" />
+  <title>Accessories — ZiraFiona</title>
+  <meta name="description" content="Shop ZiraFiona accessories — finishing pieces for every occasion." />
+  <link rel="canonical" href="https://zirafiona.up.railway.app/accessories.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="ZiraFiona" />
-  <meta property="og:title" content="Miraz — ZiraFiona" />
-  <meta property="og:description" content="Explore the ZiraFiona Miraz collection — elegant, curated women’s fashion." />
-  <meta property="og:url" content="https://zirafiona.up.railway.app/miraz.html" />
+  <meta property="og:title" content="Accessories — ZiraFiona" />
+  <meta property="og:description" content="Shop ZiraFiona accessories — finishing pieces for every occasion." />
+  <meta property="og:url" content="https://zirafiona.up.railway.app/accessories.html" />
   <meta property="og:image" content="https://res.cloudinary.com/dkcha41gs/image/upload/v1777981668/marta/ugkc4goltm8lwr2ca2iz.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Miraz — ZiraFiona" />
-  <meta name="twitter:description" content="Explore the ZiraFiona Miraz collection — elegant, curated women’s fashion." />
+  <meta name="twitter:title" content="Accessories — ZiraFiona" />
+  <meta name="twitter:description" content="Shop ZiraFiona accessories — finishing pieces for every occasion." />
   <meta name="twitter:image" content="https://res.cloudinary.com/dkcha41gs/image/upload/v1777981668/marta/ugkc4goltm8lwr2ca2iz.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -61,11 +61,11 @@
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href="index.html">Home</a>
       <span>/</span>
-      <span>Miraz</span>
+      <span>Accessories</span>
     </nav>
 
     <header class="page-header">
-      <h1 class="page-title">Miraz</h1>
+      <h1 class="page-title">Accessories</h1>
       <p class="page-count" id="pageCount"></p>
     </header>
 
@@ -75,7 +75,7 @@
   <script src="store.js"></script>
   <script>
     async function loadProducts() {
-      const products = await fetch('/api/products?type=miraz').then(r => r.json());
+      const products = await fetch('/api/products?type=accessories').then(r => r.json());
       const grid = document.getElementById('productGrid');
 
       const count = document.getElementById('pageCount');
@@ -84,7 +84,7 @@
         : '';
 
       if (!products.length) {
-        grid.innerHTML = '<p style="padding:80px 0;text-align:center;color:#888;font-size:13px;">No items yet.</p>';
+        grid.innerHTML = '<p style="padding:80px 0;text-align:center;color:#888;font-size:13px;">No accessories yet.</p>';
         return;
       }
 
