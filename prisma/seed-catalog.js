@@ -65,6 +65,36 @@ const products = [
     image: photo('dK5Zh7cAFPc'),
     description: 'Strapless lace bridal ball gown with a fitted bodice. Confirm product details and price before publishing.',
   },
+  {
+    name: 'Cotton Scrunchie Set',
+    type: 'accessories',
+    price: 12,
+    active: true,
+    colors: ['Cream', 'Yellow'],
+    sizes: ['One size'],
+    image: photo('pktdXwoZrJI'),
+    description: 'A pair of soft cotton scrunchies in cream and ochre. Swap in your own photography before treating this as exact stock.',
+  },
+  {
+    name: 'Canvas Tote Bag',
+    type: 'accessories',
+    price: 45,
+    active: true,
+    colors: ['Black'],
+    sizes: ['One size'],
+    image: photo('TK-rrTgYqzo'),
+    description: 'A structured everyday tote with long shoulder straps. Swap in your own photography before treating this as exact stock.',
+  },
+  {
+    name: 'Bucket Hat',
+    type: 'accessories',
+    price: 29,
+    active: true,
+    colors: ['Teal'],
+    sizes: ['One size'],
+    image: photo('RlnvkAjO7mM'),
+    description: 'A soft-brim bucket hat for bright days. Swap in your own photography before treating this as exact stock.',
+  },
 ];
 
 async function main() {
@@ -77,8 +107,12 @@ async function main() {
       skipped++;
       continue;
     }
+    // Entries are hidden unless they opt in: the stock photographs are
+    // licensed references, not verified inventory. The accessories opt in so
+    // the category is not empty out of the box.
+    const { active = false, colors = [], sizes = [], ...rest } = product;
     await prisma.product.create({
-      data: { ...product, images: [product.image], active: false },
+      data: { ...rest, images: [product.image], colors, sizes, active },
     });
     added++;
   }
