@@ -6,6 +6,17 @@
 
 [hidden] { display: none !important; }
 
+/* ── Focus visibility ── */
+/* :focus-visible only matches keyboard and assistive-tech focus, so pointer
+   users never see these rings. Without it the swatches, size buttons, nav
+   links and cart controls give a keyboard user no idea where they are.
+   Inputs that already signal focus by recolouring their border keep their
+   own treatment via the `outline: none` on their rules below. */
+:focus-visible {
+  outline: 2px solid #c9607a;
+  outline-offset: 3px;
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background: #fdf6f8;
@@ -66,7 +77,12 @@ body {
 }
 
 .nav-logo-img {
-  height: 300px;
+  /* The source PNG is a 2048x2048 square that is ~35% transparent padding top
+     and bottom, which is why this was once 300px — that was the only way to
+     get a legible wordmark, at the cost of 100px overflowing the 100px navbar
+     onto the page below. The src now carries Cloudinary's e_trim, so this
+     height is the wordmark's real height and the logo sits inside the bar. */
+  height: 64px;
   width: auto;
   display: block;
 }
@@ -112,7 +128,6 @@ body {
   width: 100%;
   border: none;
   border-bottom: 1px solid #f2d0d8;
-  outline: none;
   font-family: inherit;
   font-size: 15px;
   padding: 8px 0;
@@ -567,9 +582,10 @@ main {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  /* Not transparent: White, Ivory and Cream are near-invisible against the
+     #fdf6f8 background without an edge. Selected/hover recolour this ring. */
+  border: 2px solid rgba(17, 17, 17, 0.12);
   cursor: pointer;
-  outline: none;
   transition: border-color 0.2s;
 }
 
@@ -1576,7 +1592,6 @@ main {
   color: #444444;
   padding: 4px 8px;
   cursor: pointer;
-  outline: none;
 }
 
 .sketch-size-select:hover {
@@ -1615,7 +1630,6 @@ main {
 .sketch-input-wrap input[type="number"] {
   flex: 1;
   border: none;
-  outline: none;
   font-family: inherit;
   font-size: 22px;
   font-weight: 300;
@@ -1823,7 +1837,7 @@ main {
   }
 
   .nav-logo-img {
-    height: 56px;
+    height: 36px;
   }
 
   .nav-icons {
