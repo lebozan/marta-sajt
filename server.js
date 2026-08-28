@@ -17,7 +17,7 @@ const SITE_URL         = (process.env.SITE_URL || 'https://zirafiona.up.railway.
 const OG_IMAGE         = 'https://res.cloudinary.com/dkcha41gs/image/upload/v1777981668/marta/ugkc4goltm8lwr2ca2iz.png';
 const RESEND_API_KEY   = process.env.RESEND_API_KEY || '';
 const NOTIFY_EMAIL     = process.env.NOTIFY_EMAIL || '';
-const NOTIFY_FROM      = process.env.NOTIFY_FROM || 'MARTA <onboarding@resend.dev>';
+const NOTIFY_FROM      = process.env.NOTIFY_FROM || 'ZiraFiona <onboarding@resend.dev>';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -449,7 +449,7 @@ function inquiryEmailHtml({ contact, message, items, createdAt }) {
 <html><body style="margin:0;padding:24px;background:#fdf6f8;font-family:Inter,Helvetica,Arial,sans-serif;">
   <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:6px;padding:28px;">
     <tr><td>
-      <p style="margin:0 0 4px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c9607a;">MARTA</p>
+      <p style="margin:0 0 4px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c9607a;">ZiraFiona</p>
       <h1 style="margin:0 0 20px;font-size:20px;font-weight:600;color:#111111;">New wishlist inquiry</h1>
 
       <p style="margin:0 0 6px;font-size:14px;color:#111111;"><strong>Contact:</strong> ${escapeHtml(contact)}</p>
@@ -484,7 +484,7 @@ app.post('/api/admin/test-email', requireAdmin, async (req, res) => {
   }
   try {
     await sendMail({
-      subject: 'MARTA — test notification',
+      subject: 'ZiraFiona — test notification',
       html:    inquiryEmailHtml({
         contact:   'test@example.com',
         message:   'This is a test of the wishlist inquiry notification.',
@@ -626,7 +626,7 @@ function buildMeta({ title, desc, url, image, type = 'website', jsonLd = null })
   <meta name="description" content="${d}" />
   <link rel="canonical" href="${u}" />
   <meta property="og:type" content="${type}" />
-  <meta property="og:site_name" content="MARTA" />
+  <meta property="og:site_name" content="ZiraFiona" />
   <meta property="og:title" content="${t}" />
   <meta property="og:description" content="${d}" />
   <meta property="og:url" content="${u}" />
@@ -654,17 +654,17 @@ app.get('/product.html', async (req, res, next) => {
       const p = await prisma.product.findUnique({ where: { id: String(id) } });
       if (p) {
         const url   = `${SITE_URL}/product.html?id=${encodeURIComponent(p.id)}`;
-        const desc  = (p.description || `${p.name} — available now at MARTA.`).slice(0, 160);
+        const desc  = (p.description || `${p.name} — available now at ZiraFiona.`).slice(0, 160);
         const image = p.image || OG_IMAGE;
         meta = buildMeta({
-          title: `${p.name} — MARTA`, desc, url, image, type: 'product',
+          title: `${p.name} — ZiraFiona`, desc, url, image, type: 'product',
           jsonLd: {
             '@context': 'https://schema.org/',
             '@type': 'Product',
             name: p.name,
             image: (p.images && p.images.length) ? p.images : [p.image],
             description: p.description || '',
-            brand: { '@type': 'Brand', name: 'MARTA' },
+            brand: { '@type': 'Brand', name: 'ZiraFiona' },
             offers: {
               '@type': 'Offer',
               price: p.price.toFixed(2),
@@ -678,7 +678,7 @@ app.get('/product.html', async (req, res, next) => {
     }
     if (!meta) {
       meta = buildMeta({
-        title: 'MARTA', desc: 'Shop MARTA — elegant, curated women’s fashion.',
+        title: 'ZiraFiona', desc: 'Shop ZiraFiona — elegant, curated women’s fashion.',
         url: `${SITE_URL}/product.html`, image: OG_IMAGE,
       });
     }

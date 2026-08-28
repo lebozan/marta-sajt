@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project Overview
 
-MARTA is a fashion e-commerce site — a Node.js/Express backend with a vanilla HTML/CSS/JS frontend. No build step, no framework, no TypeScript. Files are served directly by Express.
+ZiraFiona is a fashion e-commerce site — a Node.js/Express backend with a vanilla HTML/CSS/JS frontend. No build step, no framework, no TypeScript. Files are served directly by Express.
 
 ## Commands
 
@@ -45,7 +45,7 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 **SEO:**
 - Static pages (`index`, `dresses`, `miraz`) have hardcoded meta description + Open Graph + Twitter tags + `<link rel="canonical">`. Base URL is `SITE_URL` (defaults to the Railway URL).
 - `cart.html` / `wishlist.html` carry `<meta name="robots" content="noindex, follow">`; `admin.html` is `noindex, nofollow`.
-- `GET /product.html` is intercepted server-side (before `express.static`): it reads the file and replaces the `<!--SEO-->` placeholder in the `<head>` with a per-product `<title>`, description, OG image, and `Product` JSON-LD (falls back to generic MARTA meta when `?id=` is missing/not found). `buildMeta()` + `escapeHtml()` build the block; JSON-LD escapes `<` to prevent tag breakout.
+- `GET /product.html` is intercepted server-side (before `express.static`): it reads the file and replaces the `<!--SEO-->` placeholder in the `<head>` with a per-product `<title>`, description, OG image, and `Product` JSON-LD (falls back to generic ZiraFiona meta when `?id=` is missing/not found). `buildMeta()` + `escapeHtml()` build the block; JSON-LD escapes `<` to prevent tag breakout.
 - `GET /sitemap.xml` — generated from `SITE_URL` + all active products (with `lastmod`). `GET /robots.txt` — references the sitemap and disallows admin/cart/wishlist/api.
 
 ### Database (Prisma + PostgreSQL)
