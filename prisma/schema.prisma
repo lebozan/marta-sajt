@@ -15,6 +15,7 @@ model Product {
   image       String
   images      String[]
   colors      String[]
+  sizes       String[]
   type        String   @default("dress")
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())

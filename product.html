@@ -60,16 +60,10 @@
         <div class="color-options" id="colorOptions"></div>
       </div>
 
-      <div class="panel-section">
+      <div class="panel-section" id="sizeSection" hidden>
         <p class="panel-label">Size</p>
-        <div class="size-options">
-          <button class="size-btn">XS</button>
-          <button class="size-btn selected">S</button>
-          <button class="size-btn">M</button>
-          <button class="size-btn">L</button>
-          <button class="size-btn">XL</button>
-        </div>
-        <a href="#" class="find-size-link" id="findSizeBtn">Find your fit</a>
+        <div class="size-options" id="sizeOptions"></div>
+        <a href="#" class="find-size-link" id="findSizeBtn" hidden>Find your fit</a>
       </div>
 
       <div class="panel-actions">
@@ -288,6 +282,7 @@
 
   <script src="store.js"></script>
   <script src="colors.js"></script>
+  <script src="sizes.js"></script>
   <script>
     let selectedColor = 'Sand';
     let selectedSize  = 'S';
@@ -316,6 +311,18 @@
       document.getElementById('colorSection').hidden = false;
     }
 
+    function renderSizes(sizes) {
+      const list = (sizes && sizes.length) ? sizes : DEFAULT_SIZES;
+      document.getElementById('sizeOptions').innerHTML = list.map((name, i) => `
+        <button class="size-btn${i === 0 ? ' selected' : ''}" aria-pressed="${i === 0}">${esc(name)}</button>
+      `).join('');
+      selectedSize = list[0];
+      // The fit finder maps body measurements onto XS-XXL, so it has nothing
+      // to say about a product sold only in "One size".
+      document.getElementById('findSizeBtn').hidden = !hasMeasuredSize(list);
+      document.getElementById('sizeSection').hidden = false;
+    }
+
     async function init() {
       // Kick off the config fetch up front so the cart button can reveal
       // as early as possible when payments are enabled.
@@ -337,9 +344,10 @@
             .map((url, i) => `<img src="${cloudinaryUrl(url, 1200)}" srcset="${cloudinarySrcset(url, [400, 600, 800, 1200, 1600])}" sizes="(max-width: 900px) 100vw, 50vw" alt="${data.name}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} />`)
             .join('');
           renderColors(data.colors);
+          renderSizes(data.sizes);
         }
       }
-      if (!PRODUCT) renderColors([]);
+      if (!PRODUCT) { renderColors([]); renderSizes([]); }
 
       // Button starts hidden in the markup; only reveal it if payments are on.
       // This avoids the flash of a visible "Add to Cart" before config loads.
@@ -374,13 +382,18 @@
       await syncWishlistBtn();
     });
 
-    document.querySelectorAll('.size-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        selectedSize = btn.textContent.trim();
-        await syncWishlistBtn();
+    // Delegated: the size buttons are re-rendered whenever a product loads.
+    document.getElementById('sizeOptions').addEventListener('click', async e => {
+      const btn = e.target.closest('.size-btn');
+      if (!btn) return;
+      document.querySelectorAll('.size-btn').forEach(b => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-pressed', 'false');
       });
+      btn.classList.add('selected');
+      btn.setAttribute('aria-pressed', 'true');
+      selectedSize = btn.textContent.trim();
+      await syncWishlistBtn();
     });
 
     document.querySelector('.btn-cart').addEventListener('click', async () => {

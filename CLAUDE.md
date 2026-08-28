@@ -20,7 +20,7 @@ To develop: run `npm start` and open `http://localhost:3000`.
 ### Backend (`server.js`)
 Express server with session-based auth via a `sid` cookie (anonymous sessions, no login). The session ID is auto-assigned as a UUID on first visit and stored in the cookie for 30 days. All API routes are prefixed `/api/`.
 
-**Input validation:** Write routes validate body shape via small helpers near the top of `server.js` (`nonEmpty`, `validType`, `validPrice`, `validImages`, `validColors`, `intParam`) plus a `LIMITS` map for max lengths. Unlike `validImages`, `validColors` accepts an empty array — a product need not offer a colour choice. Invalid input returns `400` with an `{ error }` message; numeric `:id` params are parsed with `intParam` and reject non-integers before hitting Prisma.
+**Input validation:** Write routes validate body shape via small helpers near the top of `server.js` (`nonEmpty`, `validType`, `validPrice`, `validImages`, `validColors`, `validSizes`, `intParam`) plus a `LIMITS` map for max lengths. Unlike `validImages`, `validColors` and `validSizes` accept an empty array — a product need not offer a choice. Invalid input returns `400` with an `{ error }` message; numeric `:id` params are parsed with `intParam` and reject non-integers before hitting Prisma.
 
 **Admin auth:** A single shared password (`ADMIN_PASSWORD` env var) guards all mutating and PII routes via the `requireAdmin` middleware. `POST /api/admin/login` sets an httpOnly `admin` cookie (7-day expiry) holding the password, which protected routes compare back with a constant-time check. If `ADMIN_PASSWORD` is unset, protected routes return 503. `admin.html` shows a login gate until `GET /api/admin/status` reports authenticated. Protected routes: `POST /api/upload`, product `POST/PATCH/DELETE`, carousel `POST/PATCH/DELETE` (incl. `/move`), and `GET /api/wishlist/inquiries`. The `?all=true` bypass on `GET /api/products` and `GET /api/carousel` only applies for authenticated admins; anonymous callers always get the active-only filter.
 
@@ -28,7 +28,7 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 - `GET /api/config` — returns `{ paymentsEnabled }` driven by `ENABLE_PAYMENTS` env var
 - `POST /api/admin/login` / `logout` — set/clear the admin cookie; `GET /api/admin/status` — `{ authenticated, configured }`
 - `GET /api/products` — accepts `?type=dress|miraz` and `?all=true` (admin-only, bypasses active filter)
-- `GET/POST/PATCH/DELETE /api/products/:id` — product CRUD; PATCH accepts `name`, `price`, `type`, `description`, `images`, `colors`, `active`
+- `GET/POST/PATCH/DELETE /api/products/:id` — product CRUD; PATCH accepts `name`, `price`, `type`, `description`, `images`, `colors`, `sizes`, `active`
 - `GET /api/products/search?q=` — name search, returns up to 3 results, active-only
 - `GET/POST/PATCH/DELETE /api/cart` — cart management; unique constraint on `(sessionId, productId, color, size)`, adding same variant increments quantity. `POST` takes only `{ id, color, size }` — `name`/`price`/`image` are snapshotted from the DB product server-side (client-sent values are ignored to prevent price tampering). `PATCH` `delta` must be `1` or `-1`
 - `GET/POST/DELETE /api/wishlist` — wishlist management; `POST` takes `{ id, color, size }` and snapshots product data server-side like the cart
@@ -52,7 +52,7 @@ Express server with session-based auth via a `sid` cookie (anonymous sessions, n
 Schema at `prisma/schema.prisma`. After any schema change, run `npm run db:push`.
 
 Models and notable fields:
-- **Product** — `name`, `description`, `price`, `image` (primary), `images[]`, `colors[]` (colour *names* from the shared palette; may be empty), `type` (`dress`|`miraz`), `active` (soft hide), `createdAt`, `updatedAt`
+- **Product** — `name`, `description`, `price`, `image` (primary), `images[]`, `colors[]` (colour *names* from the shared palette; may be empty), `sizes[]` (size labels; may be empty), `type` (`dress`|`miraz`), `active` (soft hide), `createdAt`, `updatedAt`
 - **CartItem** — denormalised snapshot of product data at add-time (`name`, `price`, `image`); unique on `(sessionId, productId, color, size)`
 - **WishlistItem** — same denormalised shape as CartItem, no quantity
 - **CarouselSlide** — `image`, `eyebrow`, `heading`, `ctaLabel`, `ctaLink`, `position` (sort order), `active` (soft hide)
@@ -62,16 +62,17 @@ Models and notable fields:
 ### Frontend shared patterns
 - **`store.js`** — singleton `Store` object imported by all pages. Exposes cart/wishlist fetch helpers and `updateBadge()`. `updateBadge()` calls `/api/config` first; if `paymentsEnabled` is false it reveals nothing and returns early. Cart icon (`.nav-cart`) starts `hidden` in every page's HTML and is only un-hidden by `updateBadge()` when payments are enabled — this prevents a flash on load.
 - **`search.js`** — search panel logic, loaded at the bottom of every page. Debounces input (300 ms) and calls `/api/products/search`. Depends on `cloudinaryUrl()` being in scope (defined in `store.js`).
+- **`sizes.js`** — the shared size vocabulary (`SIZE_PALETTE`, `DEFAULT_SIZES`, `MEASURED_SIZES`, `hasMeasuredSize()`), loaded by `admin.html` and `product.html`. `hasMeasuredSize()` decides whether the "Find your fit" link shows: the fit finder maps body measurements onto XS–XXL, so a product sold only in `One size` hides it.
 - **`colors.js`** — the shared colour palette (`COLOR_PALETTE`, `COLOR_NAMES`, `colorHex()`, `colorInk()`), loaded by `admin.html` and `product.html`. Products store colour **names**; hex values are presentation only, so restyling a swatch never orphans existing product/cart/wishlist rows. `colorHex()` returns a neutral grey for a name not in the palette rather than dropping it.
 - **`cloudinaryUrl(url, width)`** — defined in `store.js`, rewrites Cloudinary URLs to add `f_auto,q_auto,w_<width>` transformations. Used everywhere images are rendered.
 
 ### Page structure
 - `index.html` — homepage with hero carousel (fetches `/api/carousel`)
 - `dresses.html` / `miraz.html` — product grids with breadcrumb (`Home / Dresses` or `Home / Miraz`); fetch `/api/products?type=dress|miraz`
-- `product.html` — detail page; reads `?id=` param, shows multi-image gallery, color/size selectors, size guide modal, add-to-cart, add-to-wishlist. Description is hidden when empty. Colour swatches are rendered from the product's `colors[]` (first one preselected); a product with no colours set falls back to `DEFAULT_COLORS` so the picker is never empty.
+- `product.html` — detail page; reads `?id=` param, shows multi-image gallery, color/size selectors, size guide modal, add-to-cart, add-to-wishlist. Description is hidden when empty. Colour swatches and size buttons are rendered from the product's `colors[]` / `sizes[]` (first of each preselected); a product with none set falls back to `DEFAULT_COLORS` / `DEFAULT_SIZES` so the pickers are never empty and add-to-cart always has values to send.
 - `cart.html` — loads PayPal JS SDK, handles full checkout flow
 - `wishlist.html` — wishlist display + inquiry form
-- `admin.html` — standalone CRUD panel with its own embedded CSS (no shared `styles.css`). Manages products (create/edit/hide/delete), carousel slides (add/reorder/show/hide/delete), and views wishlist inquiries. Admin fetches always pass `?all=true` to see inactive records. Colours are picked as toggleable swatch circles via `makeColorPicker(gridId, summaryId)`, which drives both the create and edit forms and normalises the selection to palette order.
+- `admin.html` — standalone CRUD panel with its own embedded CSS (no shared `styles.css`). Manages products (create/edit/hide/delete), carousel slides (add/reorder/show/hide/delete), and views wishlist inquiries. Admin fetches always pass `?all=true` to see inactive records. Colours and sizes are picked as toggleable buttons via `makeTokenPicker({ gridId, summaryId, names, renderButton, emptyLabel })`, which drives all four pickers (colour + size, on both the create and edit forms) and normalises each selection to vocabulary order. Buttons share `.picker-btn` for hit-testing plus a `.swatch` / `.size-chip` modifier for styling.
 
 ### Styles (`styles.css`)
 Single flat stylesheet. No CSS variables — brand colours are repeated inline: `#c9607a` (rose), `#fdf6f8` (pale pink background), `#111111` (text). Font: Inter via Google Fonts.
