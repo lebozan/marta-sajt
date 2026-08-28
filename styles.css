@@ -198,6 +198,85 @@ body {
   padding: 10px 0 4px;
 }
 
+/* ── Static hero ── */
+/* Deliberately shorter than a full screen: at 100vh the customer sees no
+   product at all before scrolling, and this catalogue is small enough that
+   getting real pieces on screen matters more than a full-bleed banner. */
+
+.hero-static {
+  position: relative;
+  height: 65vh;
+  min-height: 420px;
+  overflow: hidden;
+  background: #f9e8ec;
+}
+
+.hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Only ~20% of a tall portrait's height fits this wide box, so the focal
+     point matters: 16% keeps the model's face in frame along with the top of
+     the gown. A landscape shot would suit this slot far better. */
+  object-position: center 16%;
+  display: block;
+}
+
+.hero-static-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 56px 80px;
+  color: #ffffff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.15) 45%, transparent 72%);
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-title {
+  font-size: 46px;
+  font-weight: 300;
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+}
+
+.hero-lead {
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.6;
+  max-width: 480px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hero-cta {
+  margin-top: 6px;
+  display: inline-block;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  padding-bottom: 3px;
+  transition: border-color 0.2s, opacity 0.2s;
+}
+
+.hero-cta:hover {
+  opacity: 0.8;
+  border-color: #ffffff;
+}
+
 /* ── Hero Carousel ── */
 
 .hero-carousel {
@@ -1840,6 +1919,14 @@ main {
     padding: 48px 32px 28px;
   }
 
+  .hero-static-inner {
+    padding: 48px 32px;
+  }
+
+  .hero-title {
+    font-size: 38px;
+  }
+
   .carousel-heading {
     font-size: 40px;
   }
@@ -1918,6 +2005,25 @@ main {
   .search-panel {
     top: 104px;
     padding: 14px 16px;
+  }
+
+  /* Hero */
+  .hero-static {
+    height: 56vh;
+    min-height: 340px;
+  }
+
+  .hero-static-inner {
+    padding: 28px 20px;
+    gap: 8px;
+  }
+
+  .hero-title {
+    font-size: 28px;
+  }
+
+  .hero-lead {
+    font-size: 14px;
   }
 
   /* Carousel */

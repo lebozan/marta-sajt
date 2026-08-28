@@ -58,7 +58,22 @@
   </div>
 
   <!-- Hero Carousel -->
-  <div class="hero-carousel" id="heroCarousel">
+  <!-- Static hero. Swap `hero-img` for ZiraFiona's own photography when a
+       high-resolution shot is available — this one is catalogue stock. -->
+  <section class="hero-static">
+    <img class="hero-img"
+         src="https://res.cloudinary.com/dkcha41gs/image/upload/v1787942001/marta/owrva5fwimndwysygqca.jpg"
+         alt="A ZiraFiona occasion dress" fetchpriority="high" />
+    <div class="hero-static-inner">
+      <p class="hero-eyebrow">ZiraFiona</p>
+      <h1 class="hero-title">For the moments<br />you want to remember.</h1>
+      <p class="hero-lead">Dresses for celebrations, the Miraz bridal collection, and the accessories that finish them.</p>
+      <a href="dresses.html" class="hero-cta">Explore the collection</a>
+    </div>
+  </section>
+
+  <!-- Carousel kept intact but hidden; remove `hidden` to bring it back. -->
+  <div class="hero-carousel" id="heroCarousel" hidden>
     <div class="carousel-track" id="carouselTrack"></div>
 
     <button class="carousel-btn carousel-prev" id="carouselPrev" aria-label="Previous slide">
@@ -140,6 +155,12 @@
 
     // ── Carousel ──
     (async function () {
+      // The carousel is hidden by default (see the `hidden` attribute on
+      // #heroCarousel). Bail before fetching slides or starting the timer;
+      // removing that attribute brings the whole thing back.
+      const hero = document.getElementById('heroCarousel');
+      if (!hero || hero.hidden) return;
+
       const track  = document.getElementById('carouselTrack');
       const dotsEl = document.getElementById('carouselDots');
 
