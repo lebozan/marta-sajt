@@ -62,6 +62,12 @@
       <span>/</span>
       <span>Dresses</span>
     </nav>
+
+    <header class="page-header">
+      <h1 class="page-title">Dresses</h1>
+      <p class="page-count" id="pageCount"></p>
+    </header>
+
     <section class="product-grid" id="productGrid"></section>
   </main>
 
@@ -70,6 +76,11 @@
     async function loadProducts() {
       const products = await fetch('/api/products?type=dress').then(r => r.json());
       const grid = document.getElementById('productGrid');
+
+      const count = document.getElementById('pageCount');
+      count.textContent = products.length
+        ? `${products.length} ${products.length === 1 ? 'piece' : 'pieces'}`
+        : '';
 
       if (!products.length) {
         grid.innerHTML = '<p style="padding:80px 0;text-align:center;color:#888;font-size:13px;">No dresses yet.</p>';
@@ -113,7 +124,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; 2020 ZiraFiona. All rights reserved.</span>
+      <span>&copy; <span class="footer-year">2026</span> ZiraFiona. All rights reserved.</span>
     </div>
   </footer>
 

@@ -437,6 +437,26 @@ body {
   color: #111;
 }
 
+/* ── Category page header ── */
+
+.page-header {
+  margin-bottom: 36px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: #111111;
+}
+
+.page-count {
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: #999999;
+}
+
 /* ── Product Grid ── */
 
 main {
@@ -628,7 +648,9 @@ main {
 }
 
 .panel-actions {
-  margin-top: auto;
+  /* Was `margin-top: auto`, which pinned the button to the bottom of the
+     panel and left ~180px of void under the size selector whenever there is
+     no price or Add to Cart to fill it. Let it follow the content instead. */
   padding-top: 32px;
   display: flex;
   flex-direction: column;
@@ -1763,6 +1785,14 @@ main {
 
 /* ── Responsive ── */
 
+@media (min-width: 1280px) {
+  /* Three columns leaves ~420px cards on a desktop monitor — too sparse to
+     scan. The home grid already runs four across. */
+  .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
   .navbar {
     padding: 0 32px;
@@ -1838,6 +1868,14 @@ main {
 
   .nav-logo-img {
     height: 36px;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+
+  .page-header {
+    margin-bottom: 24px;
   }
 
   .nav-icons {

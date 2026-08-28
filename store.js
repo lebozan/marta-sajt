@@ -11,6 +11,13 @@ function cloudinarySrcset(url, widths) {
   return widths.map(w => `${cloudinaryUrl(url, w)} ${w}w`).join(', ');
 }
 
+// The footer year is hardcoded in every page so it still reads correctly with
+// JS off; this just stops it going stale. Runs on load since store.js is
+// included on every page.
+document.querySelectorAll('.footer-year').forEach(el => {
+  el.textContent = new Date().getFullYear();
+});
+
 const Store = {
   _config: null,
 
