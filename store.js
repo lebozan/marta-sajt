@@ -11,6 +11,20 @@ function cloudinarySrcset(url, widths) {
   return widths.map(w => `${cloudinaryUrl(url, w)} ${w}w`).join(', ');
 }
 
+// How long a product keeps its "New" badge. The homepage always shows the
+// newest four regardless of age — a strict cutoff would empty the row (and
+// hide the section) in any month nothing was added. The badge is what keeps
+// the "New Arrivals" heading honest when stock has not moved recently.
+const NEW_ARRIVAL_DAYS = 30;
+
+function isNewArrival(createdAt) {
+  if (!createdAt) return false;
+  const added = new Date(createdAt);
+  if (Number.isNaN(added.getTime())) return false;
+  // Negative ages (a clock-skewed future date) still count as new.
+  return (Date.now() - added.getTime()) / 86400000 < NEW_ARRIVAL_DAYS;
+}
+
 // The footer year is hardcoded in every page so it still reads correctly with
 // JS off; this just stops it going stale. Runs on load since store.js is
 // included on every page.

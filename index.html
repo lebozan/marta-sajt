@@ -209,6 +209,7 @@
         <article class="product-card">
           <a href="product.html?id=${p.id}" class="product-image-link">
             <img src="${cloudinaryUrl(p.image, 600)}" srcset="${cloudinarySrcset(p.image, [200, 300, 400, 600])}" sizes="(max-width: 768px) 50vw, 25vw" alt="${p.name}" loading="lazy" />
+            ${isNewArrival(p.createdAt) ? '<span class="product-badge">New</span>' : ''}
           </a>
           <a href="product.html?id=${p.id}" class="product-info">
             <span class="product-name">${p.name}</span>
